@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "741245704812",
+    "project_id": "clroom-55a59",
+    "storage_bucket": "clroom-55a59.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:741245704812:android:9f5152af59513784fbd649",
+        "android_client_info": {
+          "package_name": "com.example.gcr"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDjX3fuDnXpZykxTmukHsT6EGZPN-TKfY8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
