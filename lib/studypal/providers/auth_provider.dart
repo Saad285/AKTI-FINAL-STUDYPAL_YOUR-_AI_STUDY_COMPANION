@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:gcr/Models/UserModels.dart';
+import 'package:gcr/studypal/Models/UserModels.dart';
 
 class AuthProvider extends ChangeNotifier {
   bool _isLoading = false;

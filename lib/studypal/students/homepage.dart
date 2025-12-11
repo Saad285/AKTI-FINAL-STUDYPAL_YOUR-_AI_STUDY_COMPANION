@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:gcr/studypal/common/classes_list_screen.dart';
 import 'package:gcr/studypal/messages/messages_screen.dart';
 import 'package:gcr/studypal/students/hometab.dart';
 import 'package:gcr/studypal/theme/app_colors.dart';
-// Required for Offset extension/constant
 
 class StudentHomepage extends StatefulWidget {
   const StudentHomepage({super.key});
@@ -20,7 +20,8 @@ class _StudentHomepageState extends State<StudentHomepage> {
     const MessagesScreen(),
     const Center(child: Text("AI Bot Content")),
     const Center(child: Text("Reminders Content")),
-    const Center(child: Text("Classes Content")),
+
+    const ClassesListScreen(),
   ];
 
   void _onItemTapped(int index) {
@@ -35,7 +36,6 @@ class _StudentHomepageState extends State<StudentHomepage> {
       extendBody: true,
       body: _pages[_selectedIndex],
 
-      // 👇 BOTTOM NAVIGATION BAR with Larger Icons 👇
       bottomNavigationBar: Padding(
         padding: EdgeInsets.fromLTRB(20.w, 0, 20.w, 40.h),
         child: ClipRRect(
@@ -63,7 +63,6 @@ class _StudentHomepageState extends State<StudentHomepage> {
                 selectedItemColor: AppColors.primary,
                 unselectedItemColor: Colors.grey[400],
 
-                // ✅ UPDATED SIZES: 28 and 32
                 selectedFontSize: 0.0,
                 unselectedFontSize: 0.0,
                 showSelectedLabels: false,
@@ -72,33 +71,28 @@ class _StudentHomepageState extends State<StudentHomepage> {
 
                 items: const [
                   BottomNavigationBarItem(
-                    icon: Icon(Icons.home_outlined, size: 28), // Increased
-                    activeIcon: Icon(Icons.home, size: 32), // Increased
+                    icon: Icon(Icons.home_outlined, size: 28),
+                    activeIcon: Icon(Icons.home, size: 32),
                     label: '',
                   ),
                   BottomNavigationBarItem(
-                    icon: Icon(
-                      Icons.chat_bubble_outline,
-                      size: 28,
-                    ), // Increased
+                    icon: Icon(Icons.chat_bubble_outline, size: 28),
                     activeIcon: Icon(Icons.chat_bubble, size: 32),
                     label: '',
                   ),
                   BottomNavigationBarItem(
-                    icon: Icon(Icons.smart_toy_outlined, size: 28), // Increased
+                    icon: Icon(Icons.smart_toy_outlined, size: 28),
                     activeIcon: Icon(Icons.smart_toy, size: 32),
                     label: '',
                   ),
                   BottomNavigationBarItem(
-                    icon: Icon(
-                      Icons.notifications_outlined,
-                      size: 28,
-                    ), // Increased
+                    icon: Icon(Icons.notifications_outlined, size: 28),
                     activeIcon: Icon(Icons.notifications, size: 32),
                     label: '',
                   ),
+                  // THIS IS THE TAB THAT WILL SHOW YOUR CLASSES
                   BottomNavigationBarItem(
-                    icon: Icon(Icons.book_outlined, size: 28), // Increased
+                    icon: Icon(Icons.book_outlined, size: 28),
                     activeIcon: Icon(Icons.book, size: 32),
                     label: '',
                   ),

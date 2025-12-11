@@ -3,7 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:gcr/studypal/theme/animated_background.dart';
 import 'package:gcr/studypal/theme/app_colors.dart';
-import 'chat_models.dart';
+import '../Models/chat_models.dart';
 import 'chat_detail_screen.dart';
 
 class MessagesScreen extends StatefulWidget {
@@ -119,10 +119,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
         appBar: AppBar(
           backgroundColor: AppColors.primary,
           elevation: 0,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
-            onPressed: () => Navigator.pop(context),
-          ),
+
           title: _isSearching
               ? TextField(
                   controller: _searchController,

@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
 import 'package:gcr/firebase_options.dart';
 import 'package:gcr/studypal/Authentication/loginpage.dart';
+import 'package:gcr/studypal/providers/teacher_provider.dart';
 import 'package:gcr/studypal/students/homepage.dart';
 import 'package:gcr/studypal/theme/app_colors.dart';
 import 'package:gcr/studypal/providers/auth_provider.dart';
@@ -16,7 +17,10 @@ void main() async {
 
   runApp(
     MultiProvider(
-      providers: [ChangeNotifierProvider(create: (_) => AuthProvider())],
+      providers: [
+        ChangeNotifierProvider(create: (_) => AuthProvider()),
+        ChangeNotifierProvider(create: (_) => TeacherProvider()),
+      ],
       child: const MyApp(),
     ),
   );

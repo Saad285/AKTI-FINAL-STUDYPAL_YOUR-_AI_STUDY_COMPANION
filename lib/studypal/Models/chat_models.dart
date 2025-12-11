@@ -7,9 +7,6 @@ class InboxItem {
   final String? imageUrl;
   final String role; // "Student" or "Teacher"
 
-  // Note: We don't store lastMessage/time here anymore because
-  // we fetch it dynamically in the UI stream.
-
   final bool isUnseen;
 
   InboxItem({

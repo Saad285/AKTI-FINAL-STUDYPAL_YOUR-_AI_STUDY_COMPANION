@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:gcr/studypal/messages/chat_models.dart';
+import 'package:gcr/studypal/Models/chat_models.dart';
 
 class ChatBubble extends StatelessWidget {
   final ChatBubbleData message;

@@ -2,12 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:gcr/studypal/theme/app_colors.dart';
-import 'dart:math'; // ✅ Required for Random
+import 'dart:math';
 
-// --- Random Color Logic ---
 final _random = Random();
 
-// ✅ User-provided function used for color generation
 Color getRandomButtonColor() {
   return AppColors.aestheticColors[_random.nextInt(
     AppColors.aestheticColors.length,
@@ -18,7 +16,7 @@ Color getRandomButtonColor() {
 class ActionButton extends StatelessWidget {
   final String title;
   final IconData icon;
-  final VoidCallback? onTap; // If onTap is null, the button is disabled.
+  final VoidCallback? onTap;
 
   const ActionButton({
     super.key,

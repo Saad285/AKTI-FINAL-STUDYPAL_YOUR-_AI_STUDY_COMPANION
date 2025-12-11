@@ -2,7 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:gcr/studypal/theme/app_colors.dart';
-import 'chat_models.dart';
+import '../Models/chat_models.dart';
 
 class ChatDetailScreen extends StatefulWidget {
   final InboxItem user;
@@ -63,8 +63,6 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
             'isRead': false,
           }, SetOptions(merge: true));
 
-      // 3. CRITICAL: Update 'lastActive' on BOTH User Profiles
-      // This forces the Messages List to move this chat to the TOP
       await FirebaseFirestore.instance.collection('users').doc(myUid).update({
         'lastActive': timestamp,
       });
@@ -81,7 +79,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white, // Clean white background
+      backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: AppColors.primary,
         title: Row(

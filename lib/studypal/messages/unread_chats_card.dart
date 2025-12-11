@@ -4,9 +4,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart'; // Firebase Import
 import 'package:firebase_auth/firebase_auth.dart'; // Auth Import
 
-// ==========================================
-// 1. SMART WIDGET (Use this in Dashboard)
-// ==========================================
 class UnreadChatsCard extends StatelessWidget {
   const UnreadChatsCard({super.key});
 
