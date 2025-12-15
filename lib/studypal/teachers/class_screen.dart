@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:gcr/studypal/providers/teacher_provider.dart';
+import 'package:gcr/studypal/teachers/add_schedule_dialog.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../theme/app_colors.dart';
-import '../providers/teacher_provider.dart';
 
 class CreateClassScreen extends StatefulWidget {
   const CreateClassScreen({super.key});
@@ -43,16 +44,31 @@ class _CreateClassScreenState extends State<CreateClassScreen> {
     }
   }
 
+  void _clearForm() {
+    _nameController.clear();
+    _codeController.clear();
+    // Dismiss keyboard
+    FocusScope.of(context).unfocus();
+  }
+
+  // Helper to show the dialog
+  void _showScheduleDialog(String classId, String subjectName) {
+    showDialog(
+      context: context,
+      builder: (context) =>
+          AddScheduleDialog(classId: classId, subjectName: subjectName),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    // Watch provider to get the updated list of classes
     final teacherProvider = Provider.of<TeacherProvider>(context);
 
-    // Disable button if loading name or provider is working
     bool isButtonEnabled =
         !teacherProvider.isLoading && currentTeacherName != "Loading...";
 
     return GestureDetector(
-      // Dismiss keyboard when tapping anywhere else
       onTap: () => FocusScope.of(context).unfocus(),
       child: Scaffold(
         backgroundColor: Colors.white,
@@ -65,7 +81,7 @@ class _CreateClassScreenState extends State<CreateClassScreen> {
             onPressed: () => Navigator.pop(context),
           ),
           title: Text(
-            "Create New Class",
+            "Manage Classes",
             style: GoogleFonts.poppins(
               fontSize: 20.sp,
               fontWeight: FontWeight.bold,
@@ -79,9 +95,9 @@ class _CreateClassScreenState extends State<CreateClassScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Header Text
+                // --- SECTION 1: CREATE CLASS FORM ---
                 Text(
-                  "Class Details",
+                  "Create New Class",
                   style: GoogleFonts.poppins(
                     fontSize: 18.sp,
                     fontWeight: FontWeight.w600,
@@ -90,15 +106,14 @@ class _CreateClassScreenState extends State<CreateClassScreen> {
                 ),
                 SizedBox(height: 5.h),
                 Text(
-                  "Fill in the information below to start a new class.",
+                  "Create a class first, then add a schedule to it.",
                   style: GoogleFonts.poppins(
                     fontSize: 14.sp,
                     color: Colors.grey[600],
                   ),
                 ),
-                SizedBox(height: 30.h),
+                SizedBox(height: 20.h),
 
-                // 1. Instructor Name (Read Only)
                 _buildTextField(
                   controller: TextEditingController(text: currentTeacherName),
                   label: "Instructor",
@@ -106,8 +121,6 @@ class _CreateClassScreenState extends State<CreateClassScreen> {
                   readOnly: true,
                 ),
                 SizedBox(height: 20.h),
-
-                // 2. Subject Name
                 _buildTextField(
                   controller: _nameController,
                   label: "Subject Name",
@@ -115,8 +128,6 @@ class _CreateClassScreenState extends State<CreateClassScreen> {
                   icon: Icons.book_outlined,
                 ),
                 SizedBox(height: 20.h),
-
-                // 3. Subject Code
                 _buildTextField(
                   controller: _codeController,
                   label: "Subject Code",
@@ -124,7 +135,7 @@ class _CreateClassScreenState extends State<CreateClassScreen> {
                   icon: Icons.qr_code_2,
                 ),
 
-                SizedBox(height: 50.h),
+                SizedBox(height: 30.h),
 
                 // Create Button
                 SizedBox(
@@ -132,15 +143,18 @@ class _CreateClassScreenState extends State<CreateClassScreen> {
                   height: 55.h,
                   child: ElevatedButton(
                     onPressed: isButtonEnabled
-                        ? () {
+                        ? () async {
                             if (_nameController.text.isNotEmpty &&
                                 _codeController.text.isNotEmpty) {
-                              teacherProvider.createClass(
+                              bool success = await teacherProvider.createClass(
                                 subjectName: _nameController.text,
                                 subjectCode: _codeController.text,
                                 teacherName: currentTeacherName,
                                 context: context,
                               );
+                              if (success) {
+                                _clearForm(); // Clear fields on success
+                              }
                             } else {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
@@ -150,16 +164,13 @@ class _CreateClassScreenState extends State<CreateClassScreen> {
                               );
                             }
                           }
-                        : null, // Button disabled if name is loading
+                        : null,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(15.r),
                       ),
                       elevation: 5,
-                      disabledBackgroundColor: AppColors.primary.withValues(
-                        alpha: 0.5,
-                      ),
                     ),
                     child: teacherProvider.isLoading
                         ? const CircularProgressIndicator(color: Colors.white)
@@ -173,6 +184,80 @@ class _CreateClassScreenState extends State<CreateClassScreen> {
                           ),
                   ),
                 ),
+
+                SizedBox(height: 40.h),
+                const Divider(),
+                SizedBox(height: 20.h),
+
+                // --- SECTION 2: LIST OF CREATED CLASSES ---
+                Text(
+                  "Classes Created This Session",
+                  style: GoogleFonts.poppins(
+                    fontSize: 18.sp,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.primary,
+                  ),
+                ),
+                SizedBox(height: 10.h),
+
+                if (teacherProvider.classes.isEmpty)
+                  Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(20.0),
+                      child: Text(
+                        "No classes created yet.",
+                        style: GoogleFonts.poppins(color: Colors.grey),
+                      ),
+                    ),
+                  )
+                else
+                  ListView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: teacherProvider.classes.length,
+                    itemBuilder: (context, index) {
+                      final classItem = teacherProvider.classes[index];
+                      return Card(
+                        margin: EdgeInsets.only(bottom: 12.h),
+                        elevation: 2,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12.r),
+                        ),
+                        child: ListTile(
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: 16.w,
+                            vertical: 8.h,
+                          ),
+                          leading: CircleAvatar(
+                            backgroundColor: AppColors.primary.withOpacity(0.1),
+                            child: const Icon(
+                              Icons.class_,
+                              color: AppColors.primary,
+                            ),
+                          ),
+                          title: Text(
+                            classItem['subjectName'],
+                            style: GoogleFonts.poppins(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          subtitle: Text(classItem['subjectCode']),
+                          trailing: OutlinedButton.icon(
+                            onPressed: () => _showScheduleDialog(
+                              classItem['classId'],
+                              classItem['subjectName'],
+                            ),
+                            icon: const Icon(Icons.add_alarm, size: 18),
+                            label: const Text("Schedule"),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: AppColors.primary,
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                SizedBox(height: 40.h),
               ],
             ),
           ),
@@ -181,7 +266,6 @@ class _CreateClassScreenState extends State<CreateClassScreen> {
     );
   }
 
-  // Consistent TextField Design
   Widget _buildTextField({
     required TextEditingController controller,
     required String label,
@@ -204,10 +288,7 @@ class _CreateClassScreenState extends State<CreateClassScreen> {
         TextField(
           controller: controller,
           readOnly: readOnly,
-          style: GoogleFonts.poppins(
-            fontSize: 15.sp,
-            color: readOnly ? Colors.grey[700] : Colors.black,
-          ),
+          style: GoogleFonts.poppins(fontSize: 15.sp),
           decoration: InputDecoration(
             hintText: hint,
             hintStyle: GoogleFonts.poppins(
@@ -227,17 +308,6 @@ class _CreateClassScreenState extends State<CreateClassScreen> {
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(15.r),
               borderSide: BorderSide.none,
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(15.r),
-              borderSide: const BorderSide(
-                color: AppColors.primary,
-                width: 1.5,
-              ),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(15.r),
-              borderSide: BorderSide(color: Colors.grey.shade200),
             ),
           ),
         ),

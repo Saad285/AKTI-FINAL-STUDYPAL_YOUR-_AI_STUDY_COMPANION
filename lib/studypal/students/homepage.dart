@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:gcr/studypal/chatbot/chat_bot_screen.dart';
 import 'package:gcr/studypal/common/classes_list_screen.dart';
 import 'package:gcr/studypal/messages/messages_screen.dart';
 import 'package:gcr/studypal/students/hometab.dart';
@@ -18,7 +19,7 @@ class _StudentHomepageState extends State<StudentHomepage> {
   final List<Widget> _pages = [
     const Hometab(),
     const MessagesScreen(),
-    const Center(child: Text("AI Bot Content")),
+    const ChatBotScreen(),
     const Center(child: Text("Reminders Content")),
 
     const ClassesListScreen(),

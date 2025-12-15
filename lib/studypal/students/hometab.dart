@@ -14,17 +14,14 @@ import 'package:gcr/studypal/Authentication/loginpage.dart';
 class Hometab extends StatelessWidget {
   const Hometab({super.key});
 
-  // CHANGED: Fetch the whole DocumentSnapshot, not just the string name
   Future<DocumentSnapshot?> _fetchUserData() async {
     User? user = FirebaseAuth.instance.currentUser;
     if (user == null) return null;
 
-    DocumentSnapshot userDoc = await FirebaseFirestore.instance
+    return await FirebaseFirestore.instance
         .collection('users')
         .doc(user.uid)
         .get();
-
-    return userDoc;
   }
 
   void _logout(BuildContext context) async {
@@ -47,11 +44,9 @@ class Hometab extends StatelessWidget {
       const Color.fromARGB(255, 234, 234, 234),
     ];
 
-    // Wrap the whole scaffold in FutureBuilder to get User Role first
     return FutureBuilder<DocumentSnapshot?>(
       future: _fetchUserData(),
       builder: (context, snapshot) {
-        // Default values while loading
         String userName = "Loading...";
         bool isTeacher = false;
 
@@ -61,8 +56,6 @@ class Hometab extends StatelessWidget {
           Map<String, dynamic> data =
               snapshot.data!.data() as Map<String, dynamic>;
           userName = "Hello ${data['name'] ?? 'User'}";
-
-          // CHECK ROLE: Assumes your Firestore has a field 'role': 'teacher'
           isTeacher = data['role'] == 'teacher';
         }
 
@@ -74,7 +67,6 @@ class Hometab extends StatelessWidget {
             scrolledUnderElevation: 0,
             leading: IconButton(
               icon: const Icon(Icons.menu, color: Colors.white),
-              tooltip: 'Open navigation menu',
               onPressed: () {},
             ),
             title: Text(
@@ -166,7 +158,6 @@ class Hometab extends StatelessWidget {
                               child: IinfoCard(
                                 title: "Pending",
                                 number: "16",
-                                // Change text based on role
                                 subtitle: isTeacher ? "grading" : "homeworks",
                                 bgColor: const Color(0xFFFFB13D),
                                 textColor: infoTextColor,
@@ -184,7 +175,6 @@ class Hometab extends StatelessWidget {
                               child: GestureDetector(
                                 onTap: () {
                                   if (isTeacher) {
-                                    // Navigate to Create Class Screen
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
@@ -192,12 +182,9 @@ class Hometab extends StatelessWidget {
                                             const CreateClassScreen(),
                                       ),
                                     );
-                                  } else {
-                                    // Logic for student joining a class (optional)
                                   }
                                 },
                                 child: IinfoCard(
-                                  // Change Title based on Role
                                   title: isTeacher ? "Create" : "New",
                                   number: isTeacher ? "+" : "3",
                                   subtitle: isTeacher ? "new class" : "classes",
@@ -215,6 +202,8 @@ class Hometab extends StatelessWidget {
                         ),
 
                         SizedBox(height: 30.h),
+
+                        // SCHEDULE HEADER
                         Text(
                           "Today's schedule",
                           style: GoogleFonts.poppins(
@@ -225,27 +214,26 @@ class Hometab extends StatelessWidget {
                         ),
                         SizedBox(height: 14.h),
 
-                        // We can also reuse schedule cards
+                        // Hardcoded schedule cards
                         ScheduleCard(
-                          subject: "Maths 101",
-                          details: isTeacher ? "Room 302" : "classes",
-                          startTime: "10:00 AM",
+                          subject: "Mathematics",
+                          details: "Room 101",
+                          startTime: "9:00 AM",
                           isOnline: false,
-                          onTap: null,
                         ),
-                        SizedBox(height: 10.h),
+                        SizedBox(height: 12.h),
                         ScheduleCard(
-                          subject: "Physics Lab",
-                          details: "Online",
-                          startTime: "12:00 PM",
+                          subject: "Physics",
+                          details: "https://zoom.us/j/123",
+                          startTime: "11:00 AM",
                           isOnline: true,
-                          onTap: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Joining Physics Lab Session...'),
-                              ),
-                            );
-                          },
+                        ),
+                        SizedBox(height: 12.h),
+                        ScheduleCard(
+                          subject: "Chemistry",
+                          details: "Lab 02",
+                          startTime: "2:00 PM",
+                          isOnline: false,
                         ),
 
                         SizedBox(height: 120.h),

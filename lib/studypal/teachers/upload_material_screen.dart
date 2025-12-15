@@ -5,6 +5,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_theme.dart';
+import '../theme/animated_background.dart';
 import '../providers/teacher_provider.dart';
 
 class UploadMaterialScreen extends StatefulWidget {
@@ -18,6 +20,8 @@ class UploadMaterialScreen extends StatefulWidget {
 
 class _UploadMaterialScreenState extends State<UploadMaterialScreen> {
   final TextEditingController _titleController = TextEditingController();
+  final TextEditingController _descriptionController =
+      TextEditingController(); // 1. Added Controller
 
   // State variables
   String _selectedType = 'Lecture Material';
@@ -25,6 +29,13 @@ class _UploadMaterialScreenState extends State<UploadMaterialScreen> {
   PlatformFile? _pickedFile;
 
   final List<String> _uploadTypes = ['Lecture Material', 'Assignment'];
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _descriptionController.dispose();
+    super.dispose();
+  }
 
   // 1. Pick File Logic (PDF, Word, Images)
   Future<void> _pickFile() async {
@@ -66,235 +77,255 @@ class _UploadMaterialScreenState extends State<UploadMaterialScreen> {
     final teacherProvider = Provider.of<TeacherProvider>(context);
     bool isAssignment = _selectedType == 'Assignment';
 
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: AppColors.primary,
-        title: Text(
-          "Upload Content",
-          style: GoogleFonts.poppins(
-            fontWeight: FontWeight.bold,
-            fontSize: 18.sp,
-          ),
-        ),
-        centerTitle: true,
-        leading: const BackButton(color: Colors.white),
-        elevation: 0,
-      ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.all(24.w),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // --- Title Input ---
-            Text("Title", style: _labelStyle()),
-            SizedBox(height: 8.h),
-            TextField(
-              controller: _titleController,
-              decoration: _inputDecoration(
-                "e.g., Week 1 Slides / Assignment 1",
-              ),
+    return AnimatedBackground(
+      colors: AppTheme.secondaryGradient,
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          backgroundColor: AppColors.primary,
+          title: Text(
+            "Upload Content",
+            style: GoogleFonts.poppins(
+              fontWeight: FontWeight.bold,
+              fontSize: 18.sp,
             ),
-
-            SizedBox(height: 20.h),
-
-            // --- Material Type Dropdown ---
-            Text("Type", style: _labelStyle()),
-            SizedBox(height: 8.h),
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: 16.w),
-              decoration: BoxDecoration(
-                color: Colors.grey[50],
-                borderRadius: BorderRadius.circular(12.r),
-                border: Border.all(color: Colors.grey.shade200),
-              ),
-              child: DropdownButtonHideUnderline(
-                child: DropdownButton<String>(
-                  value: _selectedType,
-                  isExpanded: true,
-                  icon: const Icon(
-                    Icons.arrow_drop_down,
-                    color: AppColors.primary,
-                  ),
-                  items: _uploadTypes.map((String type) {
-                    return DropdownMenuItem(
-                      value: type,
-                      child: Text(type, style: GoogleFonts.poppins()),
-                    );
-                  }).toList(),
-                  onChanged: (val) {
-                    setState(() {
-                      _selectedType = val!;
-                      // Reset deadline if switching back to Material
-                      if (_selectedType == 'Lecture Material') _deadline = null;
-                    });
-                  },
+          ),
+          centerTitle: true,
+          leading: const BackButton(color: Colors.white),
+          elevation: 0,
+        ),
+        body: SingleChildScrollView(
+          padding: EdgeInsets.all(24.w),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // --- Title Input ---
+              Text("Title", style: _labelStyle()),
+              SizedBox(height: 8.h),
+              TextField(
+                controller: _titleController,
+                decoration: _inputDecoration(
+                  "e.g., Week 1 Slides / Assignment 1",
                 ),
               ),
-            ),
 
-            // --- Deadline Picker (Conditional) ---
-            if (isAssignment) ...[
               SizedBox(height: 20.h),
-              Text("Deadline", style: _labelStyle()),
+
+              // --- 2. Description Input (New Addition) ---
+              Text("Description (Optional)", style: _labelStyle()),
               SizedBox(height: 8.h),
-              GestureDetector(
-                onTap: _pickDate,
-                child: Container(
-                  padding: EdgeInsets.symmetric(
-                    vertical: 16.h,
-                    horizontal: 16.w,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[50],
-                    borderRadius: BorderRadius.circular(12.r),
-                    border: Border.all(
-                      color: _deadline == null
-                          ? Colors.grey.shade200
-                          : AppColors.primary,
+              TextField(
+                controller: _descriptionController,
+                maxLines: 4, // Make it taller
+                keyboardType: TextInputType.multiline,
+                decoration: _inputDecoration(
+                  "Add instructions, details, or notes here...",
+                ),
+              ),
+
+              SizedBox(height: 20.h),
+
+              // --- Material Type Dropdown ---
+              Text("Type", style: _labelStyle()),
+              SizedBox(height: 8.h),
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 16.w),
+                decoration: BoxDecoration(
+                  color: Colors.grey[50],
+                  borderRadius: BorderRadius.circular(12.r),
+                  border: Border.all(color: Colors.grey.shade200),
+                ),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<String>(
+                    value: _selectedType,
+                    isExpanded: true,
+                    icon: const Icon(
+                      Icons.arrow_drop_down,
+                      color: AppColors.primary,
                     ),
+                    items: _uploadTypes.map((String type) {
+                      return DropdownMenuItem(
+                        value: type,
+                        child: Text(type, style: GoogleFonts.poppins()),
+                      );
+                    }).toList(),
+                    onChanged: (val) {
+                      setState(() {
+                        _selectedType = val!;
+                        // Reset deadline if switching back to Material
+                        if (_selectedType == 'Lecture Material')
+                          _deadline = null;
+                      });
+                    },
                   ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.calendar_today,
-                        size: 20.sp,
+                ),
+              ),
+
+              // --- Deadline Picker (Conditional) ---
+              if (isAssignment) ...[
+                SizedBox(height: 20.h),
+                Text("Deadline", style: _labelStyle()),
+                SizedBox(height: 8.h),
+                GestureDetector(
+                  onTap: _pickDate,
+                  child: Container(
+                    padding: EdgeInsets.symmetric(
+                      vertical: 16.h,
+                      horizontal: 16.w,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[50],
+                      borderRadius: BorderRadius.circular(12.r),
+                      border: Border.all(
                         color: _deadline == null
-                            ? Colors.grey
+                            ? Colors.grey.shade200
                             : AppColors.primary,
                       ),
-                      SizedBox(width: 10.w),
-                      Text(
-                        _deadline == null
-                            ? "Select Submission Date"
-                            : DateFormat('MMM dd, yyyy').format(_deadline!),
-                        style: GoogleFonts.poppins(
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.calendar_today,
+                          size: 20.sp,
                           color: _deadline == null
                               ? Colors.grey
-                              : Colors.black87,
+                              : AppColors.primary,
+                        ),
+                        SizedBox(width: 10.w),
+                        Text(
+                          _deadline == null
+                              ? "Select Submission Date"
+                              : DateFormat('MMM dd, yyyy').format(_deadline!),
+                          style: GoogleFonts.poppins(
+                            color: _deadline == null
+                                ? Colors.grey
+                                : Colors.black87,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+
+              SizedBox(height: 20.h),
+
+              // --- File Picker Area ---
+              Text("Attachment (PDF, Word, Image)", style: _labelStyle()),
+              SizedBox(height: 8.h),
+              GestureDetector(
+                onTap: _pickFile,
+                child: Container(
+                  width: double.infinity,
+                  padding: EdgeInsets.symmetric(vertical: 30.h),
+                  decoration: BoxDecoration(
+                    color: _pickedFile == null
+                        ? AppColors.primary.withOpacity(0.05)
+                        : Colors.green.withOpacity(0.05),
+                    borderRadius: BorderRadius.circular(15.r),
+                    border: Border.all(
+                      color: _pickedFile == null
+                          ? AppColors.primary
+                          : Colors.green,
+                      style: BorderStyle.solid,
+                      width: 1.5,
+                    ),
+                  ),
+                  child: Column(
+                    children: [
+                      Icon(
+                        _pickedFile == null
+                            ? Icons.cloud_upload_outlined
+                            : _getIconForFile(_pickedFile!.extension),
+                        size: 40.sp,
+                        color: _pickedFile == null
+                            ? AppColors.primary
+                            : Colors.green,
+                      ),
+                      SizedBox(height: 10.h),
+                      Text(
+                        _pickedFile == null
+                            ? "Tap to upload file"
+                            : _pickedFile!.name,
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.poppins(
+                          color: _pickedFile == null
+                              ? AppColors.primary
+                              : Colors.green,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
                     ],
                   ),
                 ),
               ),
-            ],
 
-            SizedBox(height: 20.h),
+              SizedBox(height: 40.h),
 
-            // --- File Picker Area ---
-            Text("Attachment (PDF, Word, Image)", style: _labelStyle()),
-            SizedBox(height: 8.h),
-            GestureDetector(
-              onTap: _pickFile,
-              child: Container(
+              // --- Post Button ---
+              SizedBox(
                 width: double.infinity,
-                padding: EdgeInsets.symmetric(vertical: 30.h),
-                decoration: BoxDecoration(
-                  color: _pickedFile == null
-                      ? AppColors.primary.withOpacity(0.05)
-                      : Colors.green.withOpacity(0.05),
-                  borderRadius: BorderRadius.circular(15.r),
-                  border: Border.all(
-                    color: _pickedFile == null
-                        ? AppColors.primary
-                        : Colors.green,
-                    style: BorderStyle.solid,
-                    width: 1.5,
-                  ),
-                ),
-                child: Column(
-                  children: [
-                    Icon(
-                      _pickedFile == null
-                          ? Icons.cloud_upload_outlined
-                          : _getIconForFile(_pickedFile!.extension),
-                      size: 40.sp,
-                      color: _pickedFile == null
-                          ? AppColors.primary
-                          : Colors.green,
-                    ),
-                    SizedBox(height: 10.h),
-                    Text(
-                      _pickedFile == null
-                          ? "Tap to upload file"
-                          : _pickedFile!.name,
-                      textAlign: TextAlign.center,
-                      style: GoogleFonts.poppins(
-                        color: _pickedFile == null
-                            ? AppColors.primary
-                            : Colors.green,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            SizedBox(height: 40.h),
-
-            // --- Post Button ---
-            SizedBox(
-              width: double.infinity,
-              height: 55.h,
-              child: ElevatedButton(
-                onPressed: teacherProvider.isLoading
-                    ? null
-                    : () {
-                        // 1. Basic Validation
-                        if (_titleController.text.isEmpty ||
-                            _pickedFile == null) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text("Please add a title and file"),
-                            ),
-                          );
-                          return;
-                        }
-
-                        // 2. Assignment Validation
-                        if (isAssignment && _deadline == null) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                "Please set a deadline for the assignment",
+                height: 55.h,
+                child: ElevatedButton(
+                  onPressed: teacherProvider.isLoading
+                      ? null
+                      : () {
+                          // 1. Basic Validation
+                          if (_titleController.text.isEmpty ||
+                              _pickedFile == null) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text("Please add a title and file"),
                               ),
-                            ),
-                          );
-                          return;
-                        }
+                            );
+                            return;
+                          }
 
-                        // 3. Call Upload Function
-                        teacherProvider.uploadMaterial(
-                          subjectId: widget.subjectId,
-                          title: _titleController.text,
-                          type: _selectedType,
-                          file: _pickedFile!,
-                          deadline: _deadline,
-                          context: context,
-                        );
-                      },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(15.r),
+                          // 2. Assignment Validation
+                          if (isAssignment && _deadline == null) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  "Please set a deadline for the assignment",
+                                ),
+                              ),
+                            );
+                            return;
+                          }
+
+                          // 3. Call Upload Function (Added description)
+                          teacherProvider.uploadMaterial(
+                            subjectId: widget.subjectId,
+                            title: _titleController.text,
+                            description:
+                                _descriptionController.text, // Passed here
+                            type: _selectedType,
+                            file: _pickedFile!,
+                            deadline: _deadline,
+                            context: context,
+                          );
+                        },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15.r),
+                    ),
+                    elevation: 5,
                   ),
-                  elevation: 5,
-                ),
-                child: teacherProvider.isLoading
-                    ? const CircularProgressIndicator(color: Colors.white)
-                    : Text(
-                        "Post Material",
-                        style: GoogleFonts.poppins(
-                          color: Colors.white,
-                          fontSize: 16.sp,
-                          fontWeight: FontWeight.bold,
+                  child: teacherProvider.isLoading
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : Text(
+                          "Post Material",
+                          style: GoogleFonts.poppins(
+                            color: Colors.white,
+                            fontSize: 16.sp,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                      ),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

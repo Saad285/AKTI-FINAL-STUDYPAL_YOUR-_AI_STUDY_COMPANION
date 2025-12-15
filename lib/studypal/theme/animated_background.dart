@@ -19,10 +19,10 @@ class _AnimatedBackgroundState extends State<AnimatedBackground>
   @override
   void initState() {
     super.initState();
-    // Animation setup (smooth, repeating cycle)
+    // Animation setup (smooth, slow cycle for subtle background effect)
     _animationController = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 20), // Slower cycle for background
+      duration: const Duration(seconds: 30), // Slower, more subtle cycle
     );
 
     // Sequence for Top Alignment

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter_gemini/flutter_gemini.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
 import 'package:gcr/firebase_options.dart';
@@ -14,6 +15,8 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  Gemini.init(apiKey: 'AIzaSyDv7EJhCItcq4O788SqyxOH2EKf7Ax8Sz0');
 
   runApp(
     MultiProvider(
