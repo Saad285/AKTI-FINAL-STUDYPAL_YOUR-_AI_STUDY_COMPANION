@@ -16,7 +16,16 @@ void main() async {
 
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
-  Gemini.init(apiKey: 'AIzaSyDv7EJhCItcq4O788SqyxOH2EKf7Ax8Sz0');
+  // Initialize Gemini with API key from environment
+  // IMPORTANT: Store API key in .env file (not in version control)
+  const String geminiApiKey = String.fromEnvironment(
+    'GEMINI_API_KEY',
+    defaultValue: '', // Falls back to empty; handle gracefully in chat logic
+  );
+
+  if (geminiApiKey.isNotEmpty) {
+    Gemini.init(apiKey: geminiApiKey);
+  }
 
   runApp(
     MultiProvider(
