@@ -1,0 +1,41 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "flutter-analyze",
+			"type": "shell",
+			"command": "flutter",
+			"args": [
+				"analyze"
+			],
+			"isBackground": false,
+			"problemMatcher": [
+				"$dart"
+			]
+		},
+		{
+			"label": "fix-pubspec-duplicate",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"(Get-Content pubspec.yaml) -join \"`n\" | %{ $_ -replace \"(?s)^(.*?\\bgpt_markdown:\\s*\\^1\\.1\\.4\\b.*?\\n)(.*?\\bgpt_markdown:\\s*\\^1\\.1\\.4\\b.*?\\n)\", '$1' } | Set-Content pubspec.yaml; Write-Output 'Fixed duplicate gpt_markdown in pubspec.yaml'"
+			],
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "flutter-analyze-2",
+			"type": "shell",
+			"command": "flutter",
+			"args": [
+				"analyze"
+			],
+			"isBackground": false,
+			"problemMatcher": [
+				"$dart"
+			]
+		}
+	]
+}

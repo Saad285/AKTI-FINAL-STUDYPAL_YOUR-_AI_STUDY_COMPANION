@@ -85,5 +85,4 @@ class DefaultFirebaseOptions {
     storageBucket: 'clroom-55a59.firebasestorage.app',
     measurementId: 'G-C5BQWTFMWZ',
   );
-
 }

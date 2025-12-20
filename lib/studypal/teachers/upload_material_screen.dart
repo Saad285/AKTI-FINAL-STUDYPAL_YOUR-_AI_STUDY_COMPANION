@@ -24,7 +24,7 @@ class _UploadMaterialScreenState extends State<UploadMaterialScreen> {
   DateTime? _deadline;
   PlatformFile? _pickedFile;
 
-  final List<String> _uploadTypes = ['Lecture Material', 'Assignment'];
+  final List<String> _uploadTypes = ['Lecture Material', 'Assignment', 'Quiz'];
 
   @override
   void dispose() {
@@ -69,56 +69,66 @@ class _UploadMaterialScreenState extends State<UploadMaterialScreen> {
   @override
   Widget build(BuildContext context) {
     final teacherProvider = Provider.of<TeacherProvider>(context);
-    final bool isAssignment = _selectedType == 'Assignment';
+    final bool needsDeadline =
+        _selectedType == 'Assignment' || _selectedType == 'Quiz';
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: Colors.white,
       appBar: AppBar(
+        // --- UPDATED: Primary Color Background ---
         backgroundColor: AppColors.primary,
+        elevation: 0,
+        centerTitle: true,
+        leading: IconButton(
+          // --- UPDATED: White Icon ---
+          icon: const Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: Colors.white,
+          ),
+          onPressed: () => Navigator.pop(context),
+        ),
         title: Text(
           "Upload Content",
           style: GoogleFonts.poppins(
             fontWeight: FontWeight.bold,
-            fontSize: 18.sp,
+            fontSize: 20.sp,
+            // --- UPDATED: White Text ---
+            color: Colors.white,
           ),
         ),
-        centerTitle: true,
-        leading: const BackButton(color: Colors.white),
-        elevation: 0,
       ),
       body: SingleChildScrollView(
-        padding: EdgeInsets.all(24.w),
+        padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 10.h),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            SizedBox(height: 20.h), // Added a bit more top spacing
             // ---------- TITLE ----------
             Text("Title", style: _labelStyle()),
             SizedBox(height: 8.h),
             TextField(
               controller: _titleController,
-              decoration: _inputDecoration(
-                "e.g., Week 1 Slides / Assignment 1",
-              ),
+              style: GoogleFonts.poppins(fontSize: 14.sp),
+              decoration: _inputDecoration("e.g., Week 1 Slides"),
             ),
 
             SizedBox(height: 20.h),
 
             // ---------- DESCRIPTION ----------
-            Text("Description (Optional)", style: _labelStyle()),
+            Text("Description", style: _labelStyle()),
             SizedBox(height: 8.h),
             TextField(
               controller: _descriptionController,
               maxLines: 4,
+              style: GoogleFonts.poppins(fontSize: 14.sp),
               keyboardType: TextInputType.multiline,
-              decoration: _inputDecoration(
-                "Add instructions, details, or notes here...",
-              ),
+              decoration: _inputDecoration("Add instructions or notes..."),
             ),
 
             SizedBox(height: 20.h),
 
-            // ---------- TYPE ----------
-            Text("Type", style: _labelStyle()),
+            // ---------- TYPE SELECTION ----------
+            Text("Content Type", style: _labelStyle()),
             SizedBox(height: 8.h),
             Container(
               padding: EdgeInsets.symmetric(horizontal: 16.w),
@@ -132,13 +142,19 @@ class _UploadMaterialScreenState extends State<UploadMaterialScreen> {
                   value: _selectedType,
                   isExpanded: true,
                   icon: const Icon(
-                    Icons.arrow_drop_down,
+                    Icons.keyboard_arrow_down_rounded,
                     color: AppColors.primary,
                   ),
                   items: _uploadTypes.map((String type) {
                     return DropdownMenuItem(
                       value: type,
-                      child: Text(type, style: GoogleFonts.poppins()),
+                      child: Text(
+                        type,
+                        style: GoogleFonts.poppins(
+                          fontSize: 14.sp,
+                          color: Colors.black87,
+                        ),
+                      ),
                     );
                   }).toList(),
                   onChanged: (val) {
@@ -153,57 +169,71 @@ class _UploadMaterialScreenState extends State<UploadMaterialScreen> {
               ),
             ),
 
-            // ---------- DEADLINE ----------
-            if (isAssignment) ...[
-              SizedBox(height: 20.h),
-              Text("Deadline", style: _labelStyle()),
-              SizedBox(height: 8.h),
-              GestureDetector(
-                onTap: _pickDate,
-                child: Container(
-                  padding: EdgeInsets.symmetric(
-                    vertical: 16.h,
-                    horizontal: 16.w,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[50],
-                    borderRadius: BorderRadius.circular(12.r),
-                    border: Border.all(
-                      color: _deadline == null
-                          ? Colors.grey.shade200
-                          : AppColors.primary,
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.calendar_today,
-                        size: 20.sp,
-                        color: _deadline == null
-                            ? Colors.grey
-                            : AppColors.primary,
+            // ---------- DEADLINE (Animation) ----------
+            AnimatedCrossFade(
+              firstChild: Container(),
+              secondChild: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SizedBox(height: 20.h),
+                  Text("Deadline", style: _labelStyle()),
+                  SizedBox(height: 8.h),
+                  GestureDetector(
+                    onTap: _pickDate,
+                    child: Container(
+                      padding: EdgeInsets.symmetric(
+                        vertical: 16.h,
+                        horizontal: 16.w,
                       ),
-                      SizedBox(width: 10.w),
-                      Text(
-                        _deadline == null
-                            ? "Select Submission Date"
-                            : DateFormat('MMM dd, yyyy').format(_deadline!),
-                        style: GoogleFonts.poppins(
+                      decoration: BoxDecoration(
+                        color: Colors.grey[50],
+                        borderRadius: BorderRadius.circular(12.r),
+                        border: Border.all(
                           color: _deadline == null
-                              ? Colors.grey
-                              : Colors.black87,
+                              ? Colors.grey.shade200
+                              : AppColors.primary,
                         ),
                       ),
-                    ],
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.calendar_today_rounded,
+                            size: 20.sp,
+                            color: _deadline == null
+                                ? Colors.grey
+                                : AppColors.primary,
+                          ),
+                          SizedBox(width: 10.w),
+                          Text(
+                            _deadline == null
+                                ? "Select Submission Date"
+                                : DateFormat('MMM dd, yyyy').format(_deadline!),
+                            style: GoogleFonts.poppins(
+                              fontSize: 14.sp,
+                              color: _deadline == null
+                                  ? Colors.grey
+                                  : Colors.black87,
+                              fontWeight: _deadline == null
+                                  ? FontWeight.normal
+                                  : FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
-                ),
+                ],
               ),
-            ],
+              crossFadeState: needsDeadline
+                  ? CrossFadeState.showSecond
+                  : CrossFadeState.showFirst,
+              duration: const Duration(milliseconds: 300),
+            ),
 
-            SizedBox(height: 20.h),
+            SizedBox(height: 24.h),
 
-            // ---------- FILE PICKER ----------
-            Text("Attachment (PDF, Word, Image)", style: _labelStyle()),
+            // ---------- FILE PICKER (Enhanced) ----------
+            Text("Attachment", style: _labelStyle()),
             SizedBox(height: 8.h),
             GestureDetector(
               onTap: _pickFile,
@@ -212,40 +242,67 @@ class _UploadMaterialScreenState extends State<UploadMaterialScreen> {
                 padding: EdgeInsets.symmetric(vertical: 30.h),
                 decoration: BoxDecoration(
                   color: _pickedFile == null
-                      ? AppColors.primary.withOpacity(0.05)
-                      : Colors.green.withOpacity(0.05),
-                  borderRadius: BorderRadius.circular(15.r),
+                      ? AppColors.primary.withOpacity(0.08)
+                      : Colors.green.withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(20.r),
                   border: Border.all(
                     color: _pickedFile == null
-                        ? AppColors.primary
+                        ? AppColors.primary.withOpacity(0.3)
                         : Colors.green,
                     width: 1.5,
+                    style: BorderStyle.solid,
                   ),
                 ),
                 child: Column(
                   children: [
-                    Icon(
-                      _pickedFile == null
-                          ? Icons.cloud_upload_outlined
-                          : _getIconForFile(_pickedFile!.extension),
-                      size: 40.sp,
-                      color: _pickedFile == null
-                          ? AppColors.primary
-                          : Colors.green,
+                    Container(
+                      padding: EdgeInsets.all(12.r),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Icon(
+                        _pickedFile == null
+                            ? Icons.cloud_upload_rounded
+                            : _getIconForFile(_pickedFile!.extension),
+                        size: 32.sp,
+                        color: _pickedFile == null
+                            ? AppColors.primary
+                            : Colors.green,
+                      ),
                     ),
-                    SizedBox(height: 10.h),
+                    SizedBox(height: 12.h),
                     Text(
                       _pickedFile == null
-                          ? "Tap to upload file"
+                          ? "Tap to browse files"
                           : _pickedFile!.name,
                       textAlign: TextAlign.center,
                       style: GoogleFonts.poppins(
                         color: _pickedFile == null
                             ? AppColors.primary
-                            : Colors.green,
-                        fontWeight: FontWeight.w500,
+                            : Colors.green[700],
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14.sp,
                       ),
                     ),
+                    if (_pickedFile == null)
+                      Padding(
+                        padding: EdgeInsets.only(top: 4.h),
+                        child: Text(
+                          "PDF, Word, or Images",
+                          style: GoogleFonts.poppins(
+                            color: Colors.grey[500],
+                            fontSize: 12.sp,
+                          ),
+                        ),
+                      ),
                   ],
                 ),
               ),
@@ -270,13 +327,10 @@ class _UploadMaterialScreenState extends State<UploadMaterialScreen> {
                           );
                           return;
                         }
-
-                        if (isAssignment && _deadline == null) {
+                        if (needsDeadline && _deadline == null) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
-                              content: Text(
-                                "Please set a deadline for the assignment",
-                              ),
+                              content: Text("Please set a deadline"),
                             ),
                           );
                           return;
@@ -294,22 +348,26 @@ class _UploadMaterialScreenState extends State<UploadMaterialScreen> {
                       },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
+                  elevation: 5,
+                  shadowColor: AppColors.primary.withOpacity(0.4),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(15.r),
+                    borderRadius: BorderRadius.circular(16.r),
                   ),
                 ),
                 child: teacherProvider.isLoading
                     ? const CircularProgressIndicator(color: Colors.white)
                     : Text(
-                        "Post Material",
+                        "Upload Material",
                         style: GoogleFonts.poppins(
                           color: Colors.white,
                           fontSize: 16.sp,
-                          fontWeight: FontWeight.bold,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 0.5,
                         ),
                       ),
               ),
             ),
+            SizedBox(height: 30.h),
           ],
         ),
       ),
@@ -326,12 +384,20 @@ class _UploadMaterialScreenState extends State<UploadMaterialScreen> {
   InputDecoration _inputDecoration(String hint) {
     return InputDecoration(
       hintText: hint,
-      hintStyle: GoogleFonts.poppins(color: Colors.grey[400], fontSize: 14.sp),
+      hintStyle: GoogleFonts.poppins(color: Colors.grey[400], fontSize: 13.sp),
       filled: true,
       fillColor: Colors.grey[50],
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12.r),
         borderSide: BorderSide.none,
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12.r),
+        borderSide: BorderSide(color: Colors.grey.shade200),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12.r),
+        borderSide: const BorderSide(color: AppColors.primary),
       ),
       contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
     );
@@ -340,16 +406,16 @@ class _UploadMaterialScreenState extends State<UploadMaterialScreen> {
   IconData _getIconForFile(String? extension) {
     switch (extension) {
       case 'pdf':
-        return Icons.picture_as_pdf;
+        return Icons.picture_as_pdf_rounded;
       case 'doc':
       case 'docx':
-        return Icons.description;
+        return Icons.description_rounded;
       case 'jpg':
       case 'jpeg':
       case 'png':
-        return Icons.image;
+        return Icons.image_rounded;
       default:
-        return Icons.insert_drive_file;
+        return Icons.insert_drive_file_rounded;
     }
   }
 }

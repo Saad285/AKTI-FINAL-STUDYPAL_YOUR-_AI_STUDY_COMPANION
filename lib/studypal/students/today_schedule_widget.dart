@@ -1,210 +1,245 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:gcr/studypal/Models/class_schedule.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
+// For clipboard
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gcr/studypal/theme/app_colors.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 
 class TodayScheduleWidget extends StatelessWidget {
   const TodayScheduleWidget({super.key});
 
-  String getTodayName() {
-    const days = [
-      'Sunday',
-      'Monday',
-      'Tuesday',
-      'Wednesday',
-      'Thursday',
-      'Friday',
-      'Saturday',
-    ];
-    return days[DateTime.now().weekday % 7];
+  String _getCurrentDay() {
+    return DateFormat(
+      'EEEE',
+    ).format(DateTime.now()); // Returns "Monday", "Tuesday", etc.
   }
 
   @override
   Widget build(BuildContext context) {
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+    final currentDay = _getCurrentDay();
+
+    // Avoid running Firestore queries with null userId during app restart.
+    if (userId == null || userId.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
-          .collection('class_schedules')
-          .where('day', isEqualTo: getTodayName())
-          .orderBy('time')
+          .collection('schedules')
+          .where('teacherId', isEqualTo: userId)
+          .where('day', isEqualTo: currentDay)
           .snapshots(),
       builder: (context, snapshot) {
+        // 1. Loading State
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
-        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-          return Padding(
-            padding: EdgeInsets.symmetric(vertical: 16.h),
-            child: Center(
-              child: Text(
-                'No classes today',
-                style: GoogleFonts.poppins(
-                  color: Colors.grey[600],
-                  fontSize: 14.sp,
-                ),
-              ),
+          return Center(
+            child: SizedBox(
+              height: 20.h,
+              width: 20.w,
+              child: const CircularProgressIndicator(strokeWidth: 2),
             ),
           );
         }
 
-        final schedules = snapshot.data!.docs
-            .map(
-              (doc) => ClassSchedule.fromMap(
-                doc.data() as Map<String, dynamic>,
-                doc.id,
-              ),
-            )
-            .toList();
+        // 2. Error State (Likely Missing Index)
+        if (snapshot.hasError) {
+          return Container(
+            padding: EdgeInsets.all(16.w),
+            decoration: BoxDecoration(
+              color: Colors.red[50],
+              borderRadius: BorderRadius.circular(12.r),
+              border: Border.all(color: Colors.red.shade200),
+            ),
+            child: Column(
+              children: [
+                Text(
+                  "Database Error (Missing Index)",
+                  style: GoogleFonts.poppins(
+                    color: Colors.red[800],
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14.sp,
+                  ),
+                ),
+                SizedBox(height: 8.h),
+                Text(
+                  "Check your Debug Console in VS Code. Click the link starting with 'https://console.firebase...' to create the required index.",
+                  style: GoogleFonts.poppins(
+                    fontSize: 12.sp,
+                    color: Colors.red[800],
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          );
+        }
+
+        // 3. Empty State (No classes for TODAY)
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          return Container(
+            width: double.infinity,
+            padding: EdgeInsets.symmetric(vertical: 25.h, horizontal: 20.w),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20.r),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF404040).withOpacity(0.05),
+                  spreadRadius: 0,
+                  blurRadius: 20,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Column(
+              children: [
+                Icon(
+                  Icons.event_available_rounded,
+                  size: 40.sp,
+                  color: Colors.grey[300],
+                ),
+                SizedBox(height: 10.h),
+                Text(
+                  "No classes scheduled for $currentDay",
+                  style: GoogleFonts.poppins(
+                    color: Colors.grey[400],
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+
+        // 4. Success State (List of Schedules)
+        final schedules = snapshot.data!.docs;
 
         return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-              child: Text(
-                "Today's Schedule",
-                style: GoogleFonts.poppins(
-                  fontSize: 16.sp,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
-                ),
-              ),
-            ),
-            ListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: schedules.length,
-              itemBuilder: (context, index) {
-                final schedule = schedules[index];
-                return Padding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 16.w,
-                    vertical: 8.h,
+          children: schedules.asMap().entries.map((entry) {
+            final idx = entry.key;
+            final doc = entry.value;
+            final data = doc.data() as Map<String, dynamic>;
+
+            final isOnline = data['type'] == 'Online';
+
+            // Use random aesthetic color for each card
+            Color cardColor = AppColors.randomAesthetic(idx);
+
+            return Container(
+              margin: EdgeInsets.only(bottom: 12.h),
+              padding: EdgeInsets.all(16.w),
+              decoration: BoxDecoration(
+                color: cardColor, // Using the beautiful colors
+                borderRadius: BorderRadius.circular(20.r),
+                boxShadow: [
+                  BoxShadow(
+                    color: cardColor.withOpacity(0.4),
+                    spreadRadius: 0,
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
                   ),
-                  child: Container(
+                ],
+              ),
+              child: Row(
+                children: [
+                  // --- ICON CONTAINER ---
+                  Container(
+                    height: 50.w,
+                    width: 50.w,
                     decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12.r),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
+                      color: Colors.white.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(14.r),
                     ),
-                    padding: EdgeInsets.all(12.w),
-                    child: Row(
+                    child: Icon(
+                      Icons.access_time_rounded,
+                      color: Colors.white,
+                      size: 24.sp,
+                    ),
+                  ),
+                  SizedBox(width: 16.w),
+
+                  // --- TEXT CONTENT ---
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Time Box
-                        Container(
-                          width: 50.w,
-                          height: 50.h,
-                          decoration: BoxDecoration(
-                            color: AppColors.primary.withOpacity(0.15),
-                            borderRadius: BorderRadius.circular(8.r),
+                        // Subject Name
+                        Text(
+                          data['subjectName'] ?? 'Subject',
+                          style: GoogleFonts.poppins(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 16.sp,
+                            color: Colors.white,
                           ),
-                          child: Center(
-                            child: Text(
-                              schedule.time,
+                        ),
+                        SizedBox(height: 4.h),
+
+                        // Time & Type
+                        Row(
+                          children: [
+                            Text(
+                              "${data['time']}",
                               style: GoogleFonts.poppins(
-                                fontSize: 12.sp,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.primary,
+                                color: Colors.white.withOpacity(0.9),
+                                fontSize: 13.sp,
+                                fontWeight: FontWeight.w500,
                               ),
                             ),
-                          ),
+                            Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 8.w),
+                              child: Icon(
+                                Icons.circle,
+                                size: 4.sp,
+                                color: Colors.white54,
+                              ),
+                            ),
+                            Text(
+                              data['type'] ?? 'On Campus',
+                              style: GoogleFonts.poppins(
+                                color: Colors.white.withOpacity(0.9),
+                                fontSize: 13.sp,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
                         ),
-                        SizedBox(width: 12.w),
+                        SizedBox(height: 4.h),
 
-                        // Subject & Type
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                schedule.subjectName,
+                        // Location (Room or Link)
+                        Row(
+                          children: [
+                            Icon(
+                              isOnline ? Icons.link : Icons.location_on_rounded,
+                              size: 14.sp,
+                              color: Colors.white70,
+                            ),
+                            SizedBox(width: 4.w),
+                            Expanded(
+                              child: Text(
+                                isOnline
+                                    ? (data['classLink'] ?? 'No Link')
+                                    : "Room: ${data['roomNumber'] ?? 'N/A'}",
                                 style: GoogleFonts.poppins(
-                                  fontSize: 14.sp,
+                                  color: Colors.white,
+                                  fontSize: 12.sp,
                                   fontWeight: FontWeight.w600,
                                 ),
+                                overflow: TextOverflow.ellipsis,
                               ),
-                              SizedBox(height: 4.h),
-                              if (schedule.type == 'onCampus')
-                                Row(
-                                  children: [
-                                    const Icon(
-                                      Icons.location_on,
-                                      size: 14,
-                                      color: Colors.grey,
-                                    ),
-                                    SizedBox(width: 4.w),
-                                    Text(
-                                      'Room ${schedule.roomNumber ?? 'TBD'}',
-                                      style: GoogleFonts.poppins(
-                                        fontSize: 12.sp,
-                                        color: Colors.grey[600],
-                                      ),
-                                    ),
-                                  ],
-                                )
-                              else
-                                GestureDetector(
-                                  onTap: () {
-                                    // Copy link or open in browser
-                                    if (schedule.classLink != null &&
-                                        schedule.classLink!.isNotEmpty) {
-                                      ScaffoldMessenger.of(
-                                        context,
-                                      ).showSnackBar(
-                                        SnackBar(
-                                          content: Text(
-                                            'Link: ${schedule.classLink}',
-                                          ),
-                                          action: SnackBarAction(
-                                            label: 'Copy',
-                                            onPressed: () {
-                                              // Copy to clipboard
-                                            },
-                                          ),
-                                        ),
-                                      );
-                                    }
-                                  },
-                                  child: Row(
-                                    children: [
-                                      const Icon(
-                                        Icons.link,
-                                        size: 14,
-                                        color: Colors.blue,
-                                      ),
-                                      SizedBox(width: 4.w),
-                                      Expanded(
-                                        child: Text(
-                                          'Click for link',
-                                          style: GoogleFonts.poppins(
-                                            fontSize: 12.sp,
-                                            color: Colors.blue,
-                                            decoration:
-                                                TextDecoration.underline,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
                   ),
-                );
-              },
-            ),
-          ],
+                ],
+              ),
+            );
+          }).toList(),
         );
       },
     );

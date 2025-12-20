@@ -1,7 +1,12 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gcr/studypal/theme/app_colors.dart';
+import 'package:google_fonts/google_fonts.dart';
+
 import '../Models/chat_models.dart';
 import 'chat_detail_screen.dart';
 
@@ -18,15 +23,8 @@ class _MessagesScreenState extends State<MessagesScreen> {
   final TextEditingController _searchController = TextEditingController();
   final String myUid = FirebaseAuth.instance.currentUser?.uid ?? "";
 
-  // Streams declared here to prevent reloading when typing
   late Stream<QuerySnapshot> _teacherStream;
   late Stream<QuerySnapshot> _studentStream;
-
-  final List<Color> _bgColors = [
-    const Color(0xFFE0F7FA),
-    AppColors.primary.withOpacity(0.2),
-    const Color.fromARGB(255, 234, 234, 234),
-  ];
 
   @override
   void initState() {
@@ -50,8 +48,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
   }
 
   String _getChatRoomId(String user1, String user2) {
-    List<String> ids = [user1, user2];
-    ids.sort();
+    final ids = [user1, user2]..sort();
     return ids.join("_");
   }
 
@@ -76,30 +73,28 @@ class _MessagesScreenState extends State<MessagesScreen> {
             onPressed: () async {
               Navigator.pop(context);
               try {
-                // 1. Delete messages
                 final collection = FirebaseFirestore.instance
                     .collection('chat_rooms')
                     .doc(chatRoomId)
                     .collection('messages');
-                var snapshots = await collection.get();
-                for (var doc in snapshots.docs) {
+                final snapshots = await collection.get();
+                for (final doc in snapshots.docs) {
                   await doc.reference.delete();
                 }
-                // 2. Delete room metadata (Fixes dashboard count sticking)
                 await FirebaseFirestore.instance
                     .collection('chat_rooms')
                     .doc(chatRoomId)
                     .delete();
 
-                if (mounted)
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("Chat deleted successfully")),
-                  );
+                if (!mounted || !context.mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Chat deleted successfully")),
+                );
               } catch (e) {
-                if (mounted)
-                  ScaffoldMessenger.of(
-                    context,
-                  ).showSnackBar(SnackBar(content: Text("Error: $e")));
+                if (!mounted || !context.mounted) return;
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(SnackBar(content: Text("Error: $e")));
               }
             },
             style: TextButton.styleFrom(foregroundColor: Colors.red),
@@ -118,11 +113,10 @@ class _MessagesScreenState extends State<MessagesScreen> {
         appBar: AppBar(
           backgroundColor: AppColors.primary,
           elevation: 0,
-
           title: _isSearching
               ? TextField(
                   controller: _searchController,
-                  onChanged: (value) => _updateSearch(value),
+                  onChanged: _updateSearch,
                   style: const TextStyle(color: Colors.white),
                   cursorColor: Colors.white,
                   autofocus: true,
@@ -184,38 +178,78 @@ class _MessagesScreenState extends State<MessagesScreen> {
     return StreamBuilder<QuerySnapshot>(
       stream: stream,
       builder: (context, snapshot) {
-        if (snapshot.hasError)
+        if (snapshot.hasError) {
           return Center(child: Text("Error: ${snapshot.error}"));
-        if (snapshot.connectionState == ConnectionState.waiting)
+        }
+        if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
-        if (!snapshot.hasData || snapshot.data!.docs.isEmpty)
+        }
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
           return const Center(child: Text("No users found"));
+        }
 
-        List<InboxItem> users = snapshot.data!.docs
-            .where((doc) {
-              final data = doc.data() as Map<String, dynamic>;
-              final name = data['name'].toString().toLowerCase();
-              return name.contains(_searchKeyword);
-            })
-            .map((doc) => InboxItem.fromFirestore(doc))
-            .toList();
+        final List<InboxItem> users = [];
+        for (final doc in snapshot.data!.docs) {
+          final data = doc.data() as Map<String, dynamic>;
+          if (doc.id == myUid) continue;
 
-        if (users.isEmpty)
-          return const Center(child: Text("No users match search"));
+          final name = (data['name'] ?? '').toString();
+          if (_searchKeyword.isNotEmpty &&
+              !name.toLowerCase().contains(_searchKeyword)) {
+            continue;
+          }
+
+          users.add(
+            InboxItem(
+              id: doc.id,
+              name: name.isEmpty ? 'Unknown' : name,
+              imageUrl: data['imageUrl'],
+              role: data['role'] ?? '',
+            ),
+          );
+        }
+
+        if (users.isEmpty) {
+          return const Center(child: Text("No users found"));
+        }
 
         return ListView.builder(
-          padding: const EdgeInsets.all(20),
+          padding: EdgeInsets.all(16.w),
           itemCount: users.length,
           itemBuilder: (context, index) {
-            return _buildInboxCard(context, users[index]);
+            final item = users[index];
+            return _InboxCard(
+              item: item,
+              myUid: myUid,
+              isSearching: _isSearching,
+              getChatRoomId: _getChatRoomId,
+              onDelete: _deleteChatConfirmation,
+            );
           },
         );
       },
     );
   }
+}
 
-  Widget _buildInboxCard(BuildContext context, InboxItem item) {
-    final String chatRoomId = _getChatRoomId(myUid, item.id);
+class _InboxCard extends StatelessWidget {
+  const _InboxCard({
+    required this.item,
+    required this.myUid,
+    required this.isSearching,
+    required this.getChatRoomId,
+    required this.onDelete,
+  });
+
+  final InboxItem item;
+  final String myUid;
+  final bool isSearching;
+  final String Function(String, String) getChatRoomId;
+  final Future<void> Function(BuildContext, String, String) onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    final String chatRoomId = getChatRoomId(myUid, item.id);
 
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
@@ -226,196 +260,266 @@ class _MessagesScreenState extends State<MessagesScreen> {
           .limit(1)
           .snapshots(),
       builder: (context, snapshot) {
-        // Check if we have messages
-        bool hasMessages = snapshot.hasData && snapshot.data!.docs.isNotEmpty;
+        if (snapshot.hasError) return const SizedBox.shrink();
 
-        // LOGIC 1: If NOT searching AND No Messages -> Hide card
-        if (!_isSearching && !hasMessages) {
+        final bool hasMessages =
+            snapshot.hasData && snapshot.data!.docs.isNotEmpty;
+
+        if (!isSearching && !hasMessages) {
           return const SizedBox.shrink();
         }
 
-        // Setup variables with DEFAULTS (safe for empty chats)
         String content = "Start a conversation";
         String senderId = "";
         bool isRead = true;
         Timestamp? t;
 
-        // Only overwrite if data exists
         if (hasMessages) {
-          var data = snapshot.data!.docs.first.data() as Map<String, dynamic>;
-          content = data['content'] ?? "Sent a file";
-          senderId = data['senderId'] ?? "";
-          isRead = data['isRead'] ?? true;
-          t = data['timestamp'];
+          try {
+            final data =
+                snapshot.data!.docs.first.data() as Map<String, dynamic>;
+            content = data['content'] ?? "Sent a file";
+            senderId = data['senderId'] ?? "";
+            isRead = data['isRead'] ?? true;
+            t = data['timestamp'];
+          } catch (_) {
+            content = "Unable to load message";
+          }
         }
 
-        String lastMessage = "";
+        final bool isUnseen = senderId != myUid && !isRead;
+        final String lastMessage = senderId == myUid
+            ? "You: $content"
+            : content;
+
         String time = "";
-        bool isUnseen = false;
-
-        // Check Unseen
-        if (senderId != myUid && !isRead) {
-          isUnseen = true;
-        }
-
-        // Format Message
-        if (senderId == myUid) {
-          lastMessage = "You: $content";
-        } else {
-          lastMessage = content;
-        }
-
-        // Format Time
         if (t != null) {
-          DateTime date = t.toDate();
-          time =
-              "${date.hour > 12 ? date.hour - 12 : date.hour}:${date.minute.toString().padLeft(2, '0')} ${date.hour >= 12 ? 'PM' : 'AM'}";
+          try {
+            final date = t.toDate();
+            final hour = date.hour;
+            final displayHour = hour > 12
+                ? hour - 12
+                : hour == 0
+                ? 12
+                : hour;
+            time =
+                "$displayHour:${date.minute.toString().padLeft(2, '0')} ${hour >= 12 ? 'PM' : 'AM'}";
+          } catch (_) {
+            time = "";
+          }
         }
 
         return GestureDetector(
           onTap: () {
-            // LOGIC 2: Force Dashboard Update (Always mark room as read)
-            FirebaseFirestore.instance
-                .collection('chat_rooms')
-                .doc(chatRoomId)
-                .update({'isRead': true});
-
-            // Mark specific message read (Blue Dot)
-            if (isUnseen && hasMessages) {
+            try {
               FirebaseFirestore.instance
                   .collection('chat_rooms')
                   .doc(chatRoomId)
-                  .collection('messages')
-                  .doc(snapshot.data!.docs.first.id)
-                  .update({'isRead': true});
-            }
+                  .set({'isRead': true}, SetOptions(merge: true));
 
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => ChatDetailScreen(user: item),
-              ),
-            );
-          },
-          onLongPress: () {
-            _deleteChatConfirmation(context, chatRoomId, item.name);
-          },
-          child: Container(
-            margin: const EdgeInsets.only(bottom: 15),
-            padding: const EdgeInsets.all(15),
-            decoration: BoxDecoration(
-              color: isUnseen
-                  ? const Color(0xFFE3F2FD)
-                  : Colors.white.withOpacity(0.95),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: isUnseen
-                    ? Colors.blue
-                    : const Color(0xFF7B7DBC).withOpacity(0.3),
-                width: isUnseen ? 2 : 1,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.03),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
+              if (isUnseen && hasMessages && snapshot.data!.docs.isNotEmpty) {
+                FirebaseFirestore.instance
+                    .collection('chat_rooms')
+                    .doc(chatRoomId)
+                    .collection('messages')
+                    .doc(snapshot.data!.docs.first.id)
+                    .update({'isRead': true})
+                    .catchError(
+                      (error) =>
+                          debugPrint('Failed to mark message read: $error'),
+                    );
+              }
+
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ChatDetailScreen(user: item),
                 ),
-              ],
-            ),
-            child: Row(
-              children: [
-                Stack(
-                  children: [
-                    CircleAvatar(
-                      radius: 28,
-                      backgroundColor: const Color(0xFF7B7DBC),
-                      backgroundImage: item.imageUrl != null
-                          ? NetworkImage(item.imageUrl!)
-                          : null,
-                      child: item.imageUrl == null
-                          ? Text(
-                              item.name.isNotEmpty
-                                  ? item.name[0].toUpperCase()
-                                  : "?",
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 22,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            )
-                          : null,
+              );
+            } catch (e) {
+              if (context.mounted) {
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(SnackBar(content: Text('Error: $e')));
+              }
+            }
+          },
+          onLongPress: () => onDelete(context, chatRoomId, item.name),
+          child:
+              Container(
+                    margin: EdgeInsets.only(bottom: 15.h),
+                    padding: EdgeInsets.all(16.w),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20.r),
+                      border: Border.all(color: Colors.black, width: 2.w),
                     ),
-                    if (isUnseen)
-                      Positioned(
-                        right: 0,
-                        top: 0,
-                        child: Container(
-                          width: 16,
-                          height: 16,
-                          decoration: BoxDecoration(
-                            color: Colors.blue,
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white, width: 2),
+                    child: Row(
+                      children: [
+                        Stack(
+                          children: [
+                            Hero(
+                              tag: 'avatar_${item.id}',
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                ),
+                                child: CircleAvatar(
+                                  radius: 30.r,
+                                  backgroundColor: AppColors.primary,
+                                  child:
+                                      item.imageUrl != null &&
+                                          item.imageUrl!.isNotEmpty
+                                      ? ClipOval(
+                                          child: CachedNetworkImage(
+                                            imageUrl: item.imageUrl!,
+                                            width: 60.w,
+                                            height: 60.w,
+                                            fit: BoxFit.cover,
+                                            fadeInDuration: const Duration(
+                                              milliseconds: 250,
+                                            ),
+                                            placeholder: (context, url) => SizedBox(
+                                              width: 24.w,
+                                              height: 24.w,
+                                              child:
+                                                  const CircularProgressIndicator(
+                                                    strokeWidth: 2,
+                                                    color: Colors.white,
+                                                  ),
+                                            ),
+                                            errorWidget:
+                                                (context, url, error) => Icon(
+                                                  Icons.person,
+                                                  color: Colors.white,
+                                                  size: 28.w,
+                                                ),
+                                          ),
+                                        )
+                                      : Text(
+                                          item.name.isNotEmpty
+                                              ? item.name[0].toUpperCase()
+                                              : "?",
+                                          style: GoogleFonts.poppins(
+                                            color: Colors.white,
+                                            fontSize: 24.sp,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                ),
+                              ),
+                            ),
+                            if (isUnseen)
+                              Positioned(
+                                right: 0,
+                                top: 0,
+                                child: Container(
+                                  width: 18.w,
+                                  height: 18.w,
+                                  decoration: BoxDecoration(
+                                    color: Colors.blue,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: Colors.white,
+                                      width: 3.w,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                        SizedBox(width: 15.w),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      item.name,
+                                      style: GoogleFonts.poppins(
+                                        fontWeight: isUnseen
+                                            ? FontWeight.w900
+                                            : FontWeight.w700,
+                                        fontSize: 16.sp,
+                                        color: Colors.black87,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  if (time.isNotEmpty)
+                                    Container(
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: 8.w,
+                                        vertical: 4.h,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: isUnseen
+                                            ? Colors.blue.withOpacity(0.1)
+                                            : Colors.grey.withOpacity(0.1),
+                                        borderRadius: BorderRadius.circular(
+                                          12.r,
+                                        ),
+                                      ),
+                                      child: Text(
+                                        time,
+                                        style: GoogleFonts.poppins(
+                                          fontSize: 11.sp,
+                                          color: isUnseen
+                                              ? Colors.blue
+                                              : Colors.grey[600],
+                                          fontWeight: isUnseen
+                                              ? FontWeight.w600
+                                              : FontWeight.w500,
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                              SizedBox(height: 6.h),
+                              Text(
+                                lastMessage,
+                                style: GoogleFonts.poppins(
+                                  fontSize: 14.sp,
+                                  color: !hasMessages
+                                      ? AppColors.primary
+                                      : (isUnseen
+                                            ? Colors.black87
+                                            : Colors.grey[600]),
+                                  fontStyle: !hasMessages
+                                      ? FontStyle.italic
+                                      : FontStyle.normal,
+                                  fontWeight: isUnseen
+                                      ? FontWeight.w600
+                                      : FontWeight.w400,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
                           ),
                         ),
-                      ),
-                  ],
-                ),
-                const SizedBox(width: 15),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            item.name,
-                            style: TextStyle(
-                              fontWeight: isUnseen
-                                  ? FontWeight.w900
-                                  : FontWeight.bold,
-                              fontSize: 16,
-                              color: Colors.black87,
-                            ),
-                          ),
-                          Text(
-                            time,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: isUnseen ? Colors.blue : Colors.grey[500],
-                              fontWeight: isUnseen
-                                  ? FontWeight.bold
-                                  : FontWeight.normal,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 5),
-                      Text(
-                        lastMessage,
-                        style: TextStyle(
-                          fontSize: 14,
-                          // New Chat? Show Primary Color. Unseen? Black. Read? Grey.
-                          color: !hasMessages
-                              ? AppColors.primary
-                              : (isUnseen ? Colors.black87 : Colors.grey[600]),
-                          fontStyle: !hasMessages
-                              ? FontStyle.italic
-                              : FontStyle.normal,
-                          fontWeight: isUnseen
-                              ? FontWeight.bold
-                              : FontWeight.normal,
+                        SizedBox(width: 8.w),
+                        Icon(
+                          Icons.chevron_right_rounded,
+                          color: Colors.black54,
+                          size: 24.sp,
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
+                      ],
+                    ),
+                  )
+                  .animate()
+                  .fadeIn(duration: 450.ms, curve: Curves.easeOutCubic)
+                  .slideX(
+                    begin: 0.15,
+                    end: 0,
+                    duration: 450.ms,
+                    curve: Curves.easeOutCubic,
                   ),
-                ),
-              ],
-            ),
-          ),
         );
       },
     );

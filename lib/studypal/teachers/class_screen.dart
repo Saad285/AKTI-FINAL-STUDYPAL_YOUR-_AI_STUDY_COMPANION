@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gcr/studypal/providers/teacher_provider.dart';
@@ -28,17 +29,52 @@ class _CreateClassScreenState extends State<CreateClassScreen> {
   }
 
   Future<void> _fetchTeacherName() async {
-    User? user = FirebaseAuth.instance.currentUser;
-    if (user != null) {
+    try {
+      User? user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        if (mounted) {
+          setState(() {
+            currentTeacherName = "Guest";
+          });
+        }
+        return;
+      }
+
       DocumentSnapshot doc = await FirebaseFirestore.instance
           .collection('users')
           .doc(user.uid)
-          .get();
+          .get()
+          .timeout(
+            const Duration(seconds: 10),
+            onTimeout: () =>
+                throw TimeoutException('Failed to load teacher data'),
+          );
 
       if (mounted && doc.exists) {
         setState(() {
           currentTeacherName =
               (doc.data() as Map<String, dynamic>)['name'] ?? "Teacher";
+        });
+      }
+    } on TimeoutException catch (e) {
+      debugPrint('❌ Timeout loading teacher name: $e');
+      if (mounted) {
+        setState(() {
+          currentTeacherName = "Teacher";
+        });
+      }
+    } on FirebaseException catch (e) {
+      debugPrint('❌ Firebase error: ${e.code} - ${e.message}');
+      if (mounted) {
+        setState(() {
+          currentTeacherName = "Teacher";
+        });
+      }
+    } catch (e) {
+      debugPrint('❌ Error fetching teacher name: $e');
+      if (mounted) {
+        setState(() {
+          currentTeacherName = "Teacher";
         });
       }
     }
@@ -47,11 +83,9 @@ class _CreateClassScreenState extends State<CreateClassScreen> {
   void _clearForm() {
     _nameController.clear();
     _codeController.clear();
-    // Dismiss keyboard
     FocusScope.of(context).unfocus();
   }
 
-  // Helper to show the dialog
   void _showScheduleDialog(String classId, String subjectName) {
     showDialog(
       context: context,
@@ -62,25 +96,34 @@ class _CreateClassScreenState extends State<CreateClassScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Watch provider to get the updated list of classes
     final teacherProvider = Provider.of<TeacherProvider>(context);
-
     bool isButtonEnabled =
         !teacherProvider.isLoading && currentTeacherName != "Loading...";
 
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
       child: Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: Colors.grey[50], // Soft grey background
         appBar: AppBar(
           backgroundColor: AppColors.primary,
           elevation: 0,
           centerTitle: true,
-
+          // --- 1. Curved Header ---
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(bottom: Radius.circular(24.r)),
+          ),
+          toolbarHeight: 70.h,
+          leading: IconButton(
+            icon: const Icon(
+              Icons.arrow_back_ios_new_rounded,
+              color: Colors.white,
+            ),
+            onPressed: () => Navigator.pop(context),
+          ),
           title: Text(
             "Manage Classes",
             style: GoogleFonts.poppins(
-              fontSize: 20.sp,
+              fontSize: 22.sp,
               fontWeight: FontWeight.bold,
               color: Colors.white,
             ),
@@ -92,49 +135,80 @@ class _CreateClassScreenState extends State<CreateClassScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // --- SECTION 1: CREATE CLASS FORM ---
-                Text(
-                  "Create New Class",
-                  style: GoogleFonts.poppins(
-                    fontSize: 18.sp,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.primary,
+                // --- SECTION 1: INSTRUCTOR BADGE ---
+                Center(
+                  child: Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 20.w,
+                      vertical: 10.h,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(30.r),
+                      border: Border.all(
+                        color: AppColors.primary.withOpacity(0.2),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.person_rounded,
+                          size: 20.sp,
+                          color: AppColors.primary,
+                        ),
+                        SizedBox(width: 8.w),
+                        Text(
+                          "Instructor: $currentTeacherName",
+                          style: GoogleFonts.poppins(
+                            fontSize: 14.sp,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                SizedBox(height: 5.h),
-                Text(
-                  "Create a class first, then add a schedule to it.",
-                  style: GoogleFonts.poppins(
-                    fontSize: 14.sp,
-                    color: Colors.grey[600],
-                  ),
-                ),
-                SizedBox(height: 20.h),
-
-                _buildTextField(
-                  controller: TextEditingController(text: currentTeacherName),
-                  label: "Instructor",
-                  icon: Icons.person_outline,
-                  readOnly: true,
-                ),
-                SizedBox(height: 20.h),
-                _buildTextField(
-                  controller: _nameController,
-                  label: "Subject Name",
-                  hint: "e.g., Linear Algebra",
-                  icon: Icons.book_outlined,
-                ),
-                SizedBox(height: 20.h),
-                _buildTextField(
-                  controller: _codeController,
-                  label: "Subject Code",
-                  hint: "e.g., CS-201",
-                  icon: Icons.qr_code_2,
                 ),
 
                 SizedBox(height: 30.h),
 
-                // Create Button
+                // --- SECTION 2: INPUT FORM ---
+                Text(
+                  "Create New Class",
+                  style: GoogleFonts.poppins(
+                    fontSize: 18.sp,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.black87,
+                  ),
+                ),
+                SizedBox(height: 5.h),
+                Text(
+                  "Enter the subject details below.",
+                  style: GoogleFonts.poppins(
+                    fontSize: 14.sp,
+                    color: Colors.grey[500],
+                  ),
+                ),
+                SizedBox(height: 20.h),
+
+                _buildStylishField(
+                  controller: _nameController,
+                  label: "Subject Name",
+                  hint: "e.g. Linear Algebra",
+                  icon: Icons.menu_book_rounded,
+                ),
+                SizedBox(height: 16.h),
+                _buildStylishField(
+                  controller: _codeController,
+                  label: "Subject Code",
+                  hint: "e.g. CS-201",
+                  icon: Icons.qr_code_rounded,
+                ),
+
+                SizedBox(height: 30.h),
+
+                // --- CREATE BUTTON ---
                 SizedBox(
                   width: double.infinity,
                   height: 55.h,
@@ -149,9 +223,7 @@ class _CreateClassScreenState extends State<CreateClassScreen> {
                                 teacherName: currentTeacherName,
                                 context: context,
                               );
-                              if (success) {
-                                _clearForm(); // Clear fields on success
-                              }
+                              if (success) _clearForm();
                             } else {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
@@ -164,47 +236,56 @@ class _CreateClassScreenState extends State<CreateClassScreen> {
                         : null,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
+                      elevation: 8,
+                      shadowColor: AppColors.primary.withOpacity(0.4),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(15.r),
+                        borderRadius: BorderRadius.circular(16.r),
                       ),
-                      elevation: 5,
                     ),
                     child: teacherProvider.isLoading
                         ? const CircularProgressIndicator(color: Colors.white)
                         : Text(
                             "Create Class",
                             style: GoogleFonts.poppins(
-                              fontSize: 18.sp,
+                              fontSize: 16.sp,
                               fontWeight: FontWeight.w600,
                               color: Colors.white,
+                              letterSpacing: 0.5,
                             ),
                           ),
                   ),
                 ),
 
                 SizedBox(height: 40.h),
-                const Divider(),
+                Divider(color: Colors.grey[200], thickness: 2),
                 SizedBox(height: 20.h),
 
-                // --- SECTION 2: LIST OF CREATED CLASSES ---
+                // --- SECTION 3: RECENT CLASSES ---
                 Text(
-                  "Classes Created This Session",
+                  "Recent Classes",
                   style: GoogleFonts.poppins(
                     fontSize: 18.sp,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.primary,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.black87,
                   ),
                 ),
-                SizedBox(height: 10.h),
+                SizedBox(height: 15.h),
 
                 if (teacherProvider.classes.isEmpty)
                   Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(20.0),
-                      child: Text(
-                        "No classes created yet.",
-                        style: GoogleFonts.poppins(color: Colors.grey),
-                      ),
+                    child: Column(
+                      children: [
+                        Icon(
+                          Icons.dashboard_customize_outlined,
+                          size: 40.sp,
+                          color: Colors.grey[300],
+                        ),
+                        SizedBox(height: 10.h),
+                        Text(
+                          "No classes created in this session.",
+                          style: GoogleFonts.poppins(color: Colors.grey[400]),
+                        ),
+                      ],
                     ),
                   )
                 else
@@ -214,41 +295,72 @@ class _CreateClassScreenState extends State<CreateClassScreen> {
                     itemCount: teacherProvider.classes.length,
                     itemBuilder: (context, index) {
                       final classItem = teacherProvider.classes[index];
-                      return Card(
+                      // Random color for the mini-icon
+                      Color accentColor = AppColors.randomAesthetic(index);
+
+                      return Container(
                         margin: EdgeInsets.only(bottom: 12.h),
-                        elevation: 2,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12.r),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16.r),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.grey.withOpacity(0.05),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
                         ),
                         child: ListTile(
                           contentPadding: EdgeInsets.symmetric(
                             horizontal: 16.w,
                             vertical: 8.h,
                           ),
-                          leading: CircleAvatar(
-                            backgroundColor: AppColors.primary.withOpacity(0.1),
-                            child: const Icon(
-                              Icons.class_,
-                              color: AppColors.primary,
+                          leading: Container(
+                            padding: EdgeInsets.all(10.r),
+                            decoration: BoxDecoration(
+                              color: accentColor.withOpacity(0.15),
+                              borderRadius: BorderRadius.circular(12.r),
+                            ),
+                            child: Icon(
+                              Icons.class_rounded,
+                              color: accentColor,
+                              size: 24.sp,
                             ),
                           ),
                           title: Text(
                             classItem['subjectName'],
                             style: GoogleFonts.poppins(
-                              fontWeight: FontWeight.bold,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 15.sp,
                             ),
                           ),
-                          subtitle: Text(classItem['subjectCode']),
-                          trailing: OutlinedButton.icon(
+                          subtitle: Text(
+                            classItem['subjectCode'],
+                            style: GoogleFonts.poppins(
+                              fontSize: 12.sp,
+                              color: Colors.grey[500],
+                            ),
+                          ),
+                          trailing: OutlinedButton(
                             onPressed: () => _showScheduleDialog(
                               classItem['classId'],
                               classItem['subjectName'],
                             ),
-                            icon: const Icon(Icons.add_alarm, size: 18),
-                            label: const Text("Schedule"),
                             style: OutlinedButton.styleFrom(
-                              foregroundColor: AppColors.primary,
+                              foregroundColor: accentColor,
+                              side: BorderSide(
+                                color: accentColor.withOpacity(0.5),
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10.r),
+                              ),
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 12.w,
+                                vertical: 0,
+                              ),
                             ),
+                            child: const Text("Schedule"),
                           ),
                         ),
                       );
@@ -263,12 +375,12 @@ class _CreateClassScreenState extends State<CreateClassScreen> {
     );
   }
 
-  Widget _buildTextField({
+  // --- STYLISH TEXT FIELD ---
+  Widget _buildStylishField({
     required TextEditingController controller,
     required String label,
-    String? hint,
+    required String hint,
     required IconData icon,
-    bool readOnly = false,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -276,35 +388,39 @@ class _CreateClassScreenState extends State<CreateClassScreen> {
         Text(
           label,
           style: GoogleFonts.poppins(
-            fontSize: 14.sp,
-            fontWeight: FontWeight.w500,
-            color: Colors.black87,
+            fontSize: 13.sp,
+            fontWeight: FontWeight.w600,
+            color: Colors.grey[700],
           ),
         ),
         SizedBox(height: 8.h),
-        TextField(
-          controller: controller,
-          readOnly: readOnly,
-          style: GoogleFonts.poppins(fontSize: 15.sp),
-          decoration: InputDecoration(
-            hintText: hint,
-            hintStyle: GoogleFonts.poppins(
-              color: Colors.grey[400],
-              fontSize: 14.sp,
-            ),
-            prefixIcon: Icon(
-              icon,
-              color: readOnly ? Colors.grey : AppColors.primary,
-            ),
-            filled: true,
-            fillColor: readOnly ? Colors.grey[100] : Colors.grey[50],
-            contentPadding: EdgeInsets.symmetric(
-              vertical: 18.h,
-              horizontal: 20.w,
-            ),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(15.r),
-              borderSide: BorderSide.none,
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16.r),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.grey.withOpacity(0.08),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: TextField(
+            controller: controller,
+            style: GoogleFonts.poppins(fontSize: 15.sp, color: Colors.black87),
+            decoration: InputDecoration(
+              hintText: hint,
+              hintStyle: GoogleFonts.poppins(
+                color: Colors.grey[400],
+                fontSize: 14.sp,
+              ),
+              prefixIcon: Icon(icon, color: AppColors.primary),
+              border: InputBorder.none,
+              contentPadding: EdgeInsets.symmetric(
+                vertical: 16.h,
+                horizontal: 20.w,
+              ),
             ),
           ),
         ),

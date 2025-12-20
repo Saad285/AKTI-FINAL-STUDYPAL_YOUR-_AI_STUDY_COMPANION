@@ -1,764 +1,970 @@
-import 'dart:io';
-import 'dart:convert';
-import 'dart:typed_data';
+import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:gcr/studypal/chatbot/chat_logic.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:intl/intl.dart';
+import 'package:gpt_markdown/gpt_markdown.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gcr/studypal/theme/app_colors.dart';
-import 'package:flutter_gemini/flutter_gemini.dart';
-import 'package:gpt_markdown/gpt_markdown.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:file_picker/file_picker.dart';
-import 'package:mime/mime.dart';
-import 'package:archive/archive.dart';
-import 'package:xml/xml.dart';
-import 'package:flutter/foundation.dart';
-import 'package:intl/intl.dart';
-import 'package:gcr/studypal/theme/app_theme.dart';
+import 'chat_logic.dart';
 
 class ChatBotScreen extends StatefulWidget {
-  const ChatBotScreen({super.key});
+  final String? initialPrompt;
+  final String? documentUrl;
+  final String? documentName;
+
+  const ChatBotScreen({
+    super.key,
+    this.initialPrompt,
+    this.documentUrl,
+    this.documentName,
+  });
 
   @override
   State<ChatBotScreen> createState() => _ChatBotScreenState();
 }
 
-/// Top-level helper functions for isolate computation (used by compute() for non-blocking operations)
-String _computeBase64(List<int> bytesList) =>
-    base64Encode(Uint8List.fromList(bytesList));
-
-/// Extracts text content from various document formats (DOCX, TXT, PDF).
-/// This function runs in an isolate to avoid blocking the UI thread.
-String _extractTextSync(Map args) {
-  final List<int> bytesList = List<int>.from(args['bytes'] as List);
-  final String name = args['name'] as String;
-  final Uint8List bytes = Uint8List.fromList(bytesList);
-  final ext = name.split('.').last.toLowerCase();
-
-  try {
-    // Extract text from DOCX (Microsoft Word) files by parsing XML from the archive
-    if (ext == 'docx') {
-      final archive = ZipDecoder().decodeBytes(bytes);
-      for (final file in archive) {
-        if (file.name == 'word/document.xml') {
-          final xmlStr = utf8.decode(file.content as List<int>);
-          final doc = XmlDocument.parse(xmlStr);
-          final texts = doc.findAllElements('t').map((n) => n.text).join(' ');
-          return texts;
-        }
-      }
-    } else if (ext == 'txt') {
-      // Simply decode text files as UTF-8
-      return utf8.decode(bytes);
-    } else if (ext == 'pdf') {
-      // Extract text from PDF by finding printable ASCII runs (heuristic approach)
-      final s = utf8.decode(bytes, allowMalformed: true);
-      final regex = RegExp(r'[\x20-\x7E]{30,}');
-      final matches = regex
-          .allMatches(s)
-          .map((m) => m.group(0))
-          .where((e) => e != null)
-          .cast<String>()
-          .toList();
-      if (matches.isNotEmpty) {
-        return matches.take(5).join('\n\n');
-      }
-    }
-  } catch (e) {
-    // Silently handle any extraction errors and return empty string
-    debugPrint("Error extracting text: $e");
-  }
-  return '';
-}
-
-class _ChatBotScreenState extends State<ChatBotScreen> {
+class _ChatBotScreenState extends State<ChatBotScreen>
+    with SingleTickerProviderStateMixin {
   final TextEditingController _controller = TextEditingController();
   final ScrollController _scrollController = ScrollController();
-
-  // Instance of ChatLogic for managing AI conversation and note memory
   final ChatLogic _chatLogic = ChatLogic();
-
   final ImagePicker _picker = ImagePicker();
-  // Gemini instance for AI processing (currently used for image and document analysis)
-  final Gemini gemini = Gemini.instance;
+  // ignore: unused_field
+  final GlobalKey<AnimatedListState> _listKey = GlobalKey<AnimatedListState>();
+
   bool _isTyping = false;
+  bool _isInitializing = true;
+  final List<Map<String, dynamic>> _messages = [];
+  late AnimationController _typingAnimationController;
+  StreamSubscription<String>? _imageStreamSub;
 
-  // Chat message history - starts with a welcome message from the AI assistant
-  final List<Map<String, dynamic>> _messages = [
-    {
-      "isUser": false,
-      "text":
-          "Hello! I'm StudyPal AI. 🤖\n\nI can help you from your class notes. Ask me anything!",
-      "time": "Now",
-    },
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _typingAnimationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    )..repeat(reverse: true);
+    _controller.addListener(() {
+      setState(() {});
+    });
+    _initializeRAG();
 
-  void _scrollToBottom() {
-    Future.delayed(const Duration(milliseconds: 100), () {
-      if (_scrollController.hasClients) {
+    // Process initial prompt if provided
+    if (widget.initialPrompt != null && widget.initialPrompt!.isNotEmpty) {
+      Future.delayed(const Duration(milliseconds: 800), () {
+        if (mounted) {
+          _controller.text = widget.initialPrompt!;
+          sendMessage();
+        }
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    _scrollController.dispose();
+    _typingAnimationController.dispose();
+    _imageStreamSub?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _initializeRAG() async {
+    try {
+      await _chatLogic.initialize();
+      if (mounted) {
+        setState(() => _isInitializing = false);
+      }
+    } catch (e) {
+      debugPrint('❌ RAG initialization failed: $e');
+      if (mounted) {
+        setState(() => _isInitializing = false);
+      }
+    }
+  }
+
+  // UPDATED: Now seeds "StudyPal" identity data instead of personal data
+  Future<void> _seedInitialData() async {
+    setState(() => _isTyping = true);
+
+    try {
+      // Identity & Purpose
+      await _chatLogic.learnFact(
+        "I am StudyPal, an intelligent AI study assistant designed to help students learn faster and more efficiently.",
+      );
+
+      // Capabilities
+      await _chatLogic.learnFact(
+        "I can explain complex concepts, solve problems, and analyze images of notes or diagrams.",
+      );
+
+      // Domain Knowledge (General CS Context)
+      await _chatLogic.learnFact(
+        "I specialize in Computer Science topics like Algorithms, Data Structures, Operating Systems, and Linear Algebra.",
+      );
+
+      // Feature Awareness
+      await _chatLogic.learnFact(
+        "I use RAG (Retrieval-Augmented Generation) to search your uploaded notes and provide accurate, context-aware answers.",
+      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('✅ StudyPal core knowledge loaded!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('❌ Failed to seed data: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isTyping = false);
+    }
+  }
+
+  void scrollToBottom() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollController.hasClients &&
+          _scrollController.position.maxScrollExtent > 0) {
         _scrollController.animateTo(
           _scrollController.position.maxScrollExtent,
           duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOut,
+          curve: Curves.easeOutCubic,
         );
       }
     });
   }
 
-  /// Handles sending user messages to the AI and receiving responses.
-  /// Updates UI to show both user input and AI response.
-  Future<void> _sendMessage() async {
+  Future<void> sendMessage() async {
     final text = _controller.text.trim();
     if (text.isEmpty) return;
 
-    // Add user message to chat UI and show loading state
     setState(() {
       _messages.add({
         "isUser": true,
         "text": text,
-        "time": DateFormat('hh:mm a').format(DateTime.now()),
+        "time": DateFormat('h:mm a').format(DateTime.now()),
       });
-      _isTyping = true;
+      _controller.clear();
     });
-    _controller.clear();
-    _scrollToBottom();
+    scrollToBottom();
 
-    // Send message to ChatLogic for processing with AI (checks memory and generates response)
-    String responseText = await _chatLogic.getAnswer(text);
+    // ----------------------------------------------------
+    // START: NEW FEATURE - Custom Command Handler (Memory)
+    // ----------------------------------------------------
+    final lowerText = text.toLowerCase();
+    const commandPrefix = "remember that ";
 
-    // Update UI with AI response message
-    setState(() {
-      _messages.add({
-        "isUser": false,
-        "text": responseText,
-        "time": DateFormat('hh:mm a').format(DateTime.now()),
-      });
-      _isTyping = false;
-    });
-    _scrollToBottom();
+    if (lowerText.startsWith(commandPrefix)) {
+      final fact = text.substring(commandPrefix.length).trim();
+
+      // Basic check to prevent saving empty facts
+      if (fact.isEmpty) {
+        if (mounted) {
+          _messages.add({
+            "isUser": false,
+            "text": "Please tell me what to remember after 'remember that '.",
+            "time": DateFormat('h:mm a').format(DateTime.now()),
+          });
+          scrollToBottom();
+        }
+        return; // Stop execution if the command is empty
+      }
+
+      if (mounted) setState(() => _isTyping = true);
+
+      try {
+        await _chatLogic.learnFact(
+          fact,
+        ); // Saves fact to Firebase via RAG system
+        final reply =
+            "✅ Got it! I've saved the fact: **'$fact'** to your permanent study notes.";
+
+        if (mounted) {
+          setState(() {
+            _messages.add({
+              "isUser": false,
+              "text": reply,
+              "time": DateFormat('h:mm a').format(DateTime.now()),
+            });
+          });
+        }
+      } catch (e) {
+        if (mounted) {
+          setState(() {
+            _messages.add({
+              "isUser": false,
+              "text":
+                  "❌ Error saving fact: Could not save the note to Firebase. Check your connection/permissions.",
+              "time": DateFormat('h:mm a').format(DateTime.now()),
+            });
+          });
+        }
+      } finally {
+        if (mounted) setState(() => _isTyping = false);
+        scrollToBottom();
+      }
+      return; // IMPORTANT: Prevents the memory command from going to the LLM
+    }
+    // ----------------------------------------------------
+    // END: Custom Command Handler
+    // ----------------------------------------------------
+
+    await Future.delayed(const Duration(milliseconds: 200));
+    if (mounted) setState(() => _isTyping = true);
+
+    try {
+      final detailResponse = await _chatLogic.captureUserDetail(text);
+      if (detailResponse != null) {
+        if (mounted) {
+          setState(() {
+            _messages.add({
+              "isUser": false,
+              "text": detailResponse,
+              "time": DateFormat('h:mm a').format(DateTime.now()),
+            });
+            _isTyping = false;
+          });
+        }
+        scrollToBottom();
+        return;
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _messages.add({
+            "isUser": false,
+            "text": "I couldn't save that detail: $e",
+            "time": DateFormat('h:mm a').format(DateTime.now()),
+          });
+          _isTyping = false;
+        });
+      }
+      scrollToBottom();
+      return;
+    }
+
+    try {
+      final reply = await _chatLogic.getAnswerWithRAG(text);
+      if (mounted) {
+        setState(() {
+          _messages.add({
+            "isUser": false,
+            "text": reply,
+            "time": DateFormat('h:mm a').format(DateTime.now()),
+          });
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _messages.add({
+            "isUser": false,
+            "text": "Sorry, something went wrong while fetching the answer.",
+            "time": DateFormat('h:mm a').format(DateTime.now()),
+          });
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isTyping = false);
+      scrollToBottom();
+    }
   }
 
-  /// Opens a dialog for adding study notes directly to the AI's memory.
-  /// This allows testing the note storage system and retrieval features.
-  Future<void> _addTestNoteDialog() async {
-    TextEditingController titleCtrl = TextEditingController();
-    TextEditingController contentCtrl = TextEditingController();
-    bool isSaving = false;
-
-    showDialog(
-      context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) {
-          return AlertDialog(
-            title: const Text("Add Class Note"),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: titleCtrl,
-                  decoration: const InputDecoration(
-                    hintText: "Topic (e.g., Physics)",
-                  ),
-                ),
-                const SizedBox(height: 10),
-                TextField(
-                  controller: contentCtrl,
-                  maxLines: 3,
-                  decoration: const InputDecoration(
-                    hintText: "Paste Note Content here...",
-                  ),
-                ),
-                if (isSaving)
-                  const Padding(
-                    padding: EdgeInsets.all(8.0),
-                    child: CircularProgressIndicator(),
-                  ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: isSaving
-                    ? null
-                    : () async {
-                        if (contentCtrl.text.isEmpty) return;
-
-                        setDialogState(
-                          () => isSaving = true,
-                        ); // Show loading indicator
-
-                        // Save the note to ChatLogic's memory system
-                        await _chatLogic.saveNoteToMemory(
-                          titleCtrl.text,
-                          contentCtrl.text,
-                        );
-
-                        if (context.mounted) {
-                          Navigator.pop(context);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                "Note Saved! AI can now answer questions about this.",
-                              ),
-                            ),
-                          );
-                        }
-                      },
-                child: const Text("Save to Memory"),
-              ),
-            ],
-          );
-        },
-      ),
+  Future<void> pickImage() async {
+    final XFile? image = await _picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 85,
     );
-  }
+    if (image == null) return;
+    final bytes = await image.readAsBytes();
 
-  /// Processes images selected from gallery or camera.
-  /// Sends the image to Gemini AI for analysis and receives study insights.
-  Future<void> _processImage(XFile pickedFile) async {
-    final Uint8List imageBytes = await pickedFile.readAsBytes();
-    final String base64Image = base64Encode(imageBytes);
-    final inlineData = InlineData(mimeType: 'image/png', data: base64Image);
-
-    // Store image bytes in message object to prevent re-reading from disk on widget
-    // Cache bytes in the message to avoid repeated File I/O on rebuilds
     setState(() {
       _messages.add({
         "isUser": true,
-        "text": "",
-        "imageBytes": imageBytes,
-        "imagePath": pickedFile.path,
-        "time": DateFormat('hh:mm a').format(DateTime.now()),
+        "text": "📷 Sent an image",
+        "time": DateFormat('h:mm a').format(DateTime.now()),
+        "isImage": true,
       });
-      _isTyping = true;
     });
-    _scrollToBottom();
+    scrollToBottom();
 
-    gemini
-        .promptStream(
-          parts: [
-            Part.text("Analyze this image as a study helper."),
-            Part.inline(inlineData),
-          ],
-        )
-        .listen((event) {
-          final reply = event?.output ?? "";
-          setState(() {
-            if (_messages.isNotEmpty && _messages.last["isUser"] == false) {
-              _messages.last["text"] = (_messages.last["text"] ?? "") + reply;
-            } else {
-              _messages.add({
-                "isUser": false,
-                "text": reply,
-                "time": DateFormat('hh:mm a').format(DateTime.now()),
-              });
-            }
-            _isTyping = false;
-            _scrollToBottom();
-          });
-        });
-  }
-
-  /// Handles processing of document files (PDF, DOCX, TXT, PPT, etc.).
-  /// Extracts text locally first, then sends to AI for analysis.
-  /// Saves extracted content to memory for future reference.
-  // --- FILE HANDLING (pdf/docx/txt/ppt etc) ---
-  Future<void> _processPlatformFile(PlatformFile file) async {
-    try {
-      Uint8List? bytes = file.bytes;
-      if (bytes == null && file.path != null) {
-        bytes = await File(file.path!).readAsBytes();
-      }
-
-      // Extract text locally in an isolate to avoid blocking the main UI thread
-      if (bytes == null) return;
-
-      // Try local extraction first (run in isolate)
-      final extracted = await compute(_extractTextSync, {
-        'bytes': bytes.toList(),
-        'name': file.name,
-      });
-
+    await Future.delayed(const Duration(milliseconds: 200));
+    if (mounted) {
       setState(() {
         _messages.add({
-          "isUser": true,
-          "text": "",
-          "fileName": file.name,
-          "time": DateFormat('hh:mm a').format(DateTime.now()),
+          "isUser": false,
+          "text": "Analyzing...",
+          "time": DateFormat('h:mm a').format(DateTime.now()),
         });
         _isTyping = true;
       });
-
-      if (extracted.isNotEmpty) {
-        // Save locally-extracted text to memory immediately (RAG)
-        try {
-          await _chatLogic.saveNoteToMemory(file.name, extracted);
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Saved "${file.name}" to memory.')),
-            );
-          }
-        } catch (e) {
-          debugPrint('Error saving extracted note: $e');
-        }
-
-        // Send extracted text to Gemini (smaller payload)
-        final promptText =
-            "Analyze this extracted document as a study helper and extract concise notes. File: ${file.name}\n\n$extracted";
-        final buffer = StringBuffer();
-        gemini
-            .promptStream(parts: [Part.text(promptText)])
-            .listen(
-              (event) {
-                final reply = event?.output ?? "";
-                buffer.write(reply);
-                setState(() {
-                  if (_messages.isNotEmpty &&
-                      _messages.last["isUser"] == false) {
-                    _messages.last["text"] =
-                        (_messages.last["text"] ?? "") + reply;
-                  } else {
-                    _messages.add({
-                      "isUser": false,
-                      "text": reply,
-                      "time": DateFormat('hh:mm a').format(DateTime.now()),
-                    });
-                  }
-                  _isTyping = false;
-                  _scrollToBottom();
-                });
-              },
-              onError: (e) {
-                setState(() {
-                  _messages.add({
-                    "isUser": false,
-                    "text": "Error analyzing document.",
-                    "time": DateFormat('hh:mm a').format(DateTime.now()),
-                  });
-                  _isTyping = false;
-                });
-              },
-              onDone: () async {
-                // Finalize anything if needed
-              },
-            );
-      } else {
-        // Fallback: send raw bytes as inline, but encode in an isolate to avoid blocking UI
-        final base64Data = await compute(_computeBase64, bytes.toList());
-        final mimeType =
-            lookupMimeType(file.name, headerBytes: bytes) ??
-            'application/octet-stream';
-        final inlineData = InlineData(mimeType: mimeType, data: base64Data);
-
-        final promptText =
-            "Analyze this document as a study helper and extract concise notes. File: ${file.name}";
-        final buffer = StringBuffer();
-        gemini
-            .promptStream(
-              parts: [Part.text(promptText), Part.inline(inlineData)],
-            )
-            .listen(
-              (event) {
-                final reply = event?.output ?? "";
-                buffer.write(reply);
-                setState(() {
-                  if (_messages.isNotEmpty &&
-                      _messages.last["isUser"] == false) {
-                    _messages.last["text"] =
-                        (_messages.last["text"] ?? "") + reply;
-                  } else {
-                    _messages.add({
-                      "isUser": false,
-                      "text": reply,
-                      "time": DateFormat('hh:mm a').format(DateTime.now()),
-                    });
-                  }
-                  _isTyping = false;
-                  _scrollToBottom();
-                });
-              },
-              onError: (e) {
-                setState(() {
-                  _messages.add({
-                    "isUser": false,
-                    "text": "Error analyzing document.",
-                    "time": DateFormat('hh:mm a').format(DateTime.now()),
-                  });
-                  _isTyping = false;
-                });
-              },
-              onDone: () async {
-                final extracted2 = buffer.toString().trim();
-                if (extracted2.isNotEmpty) {
-                  try {
-                    await _chatLogic.saveNoteToMemory(file.name, extracted2);
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Saved "${file.name}" to memory.'),
-                        ),
-                      );
-                    }
-                  } catch (e) {
-                    debugPrint('Error saving extracted note: $e');
-                  }
-                }
-              },
-            );
-      }
-    } catch (e) {
-      debugPrint('Error processing file: $e');
     }
-  }
 
-  Future<void> _pickFiles() async {
+    String fullResponse = "";
     try {
-      final result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['pdf', 'doc', 'docx', 'txt', 'ppt', 'pptx'],
-        allowMultiple: false,
-        withData: true,
-      );
-      if (result != null && result.files.isNotEmpty) {
-        await _processPlatformFile(result.files.first);
-      }
+      await _imageStreamSub?.cancel();
+      _imageStreamSub = _chatLogic
+          .analyzeImageStream("Explain this image for a student.", bytes)
+          .listen(
+            (chunk) {
+              fullResponse += chunk;
+              if (mounted && _messages.isNotEmpty) {
+                setState(() {
+                  _messages.last['text'] = fullResponse;
+                });
+              }
+            },
+            onError: (e, _) {
+              if (mounted && _messages.isNotEmpty) {
+                setState(() {
+                  _messages.last['text'] =
+                      "Sorry, something went wrong while analyzing the image.";
+                  _isTyping = false;
+                });
+              }
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Image analysis error: $e'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+              scrollToBottom();
+            },
+            onDone: () {
+              if (mounted) {
+                setState(() => _isTyping = false);
+                scrollToBottom();
+              }
+            },
+            cancelOnError: true,
+          );
     } catch (e) {
-      debugPrint('File pick error: $e');
-    }
-  }
-
-  void _showAttachmentOptions() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.white,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
-      ),
-      builder: (context) {
-        return SafeArea(
-          child: Wrap(
-            children: [
-              ListTile(
-                leading: const Icon(
-                  Icons.photo_library,
-                  color: AppColors.primary,
-                ),
-                title: Text("Gallery", style: GoogleFonts.poppins()),
-                onTap: () {
-                  Navigator.pop(context);
-                  _picker.pickImage(source: ImageSource.gallery).then((f) {
-                    if (f != null) _processImage(f);
-                  });
-                },
-              ),
-              ListTile(
-                leading: const Icon(
-                  Icons.insert_drive_file,
-                  color: AppColors.primary,
-                ),
-                title: Text("Files", style: GoogleFonts.poppins()),
-                onTap: () {
-                  Navigator.pop(context);
-                  _pickFiles();
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.camera_alt, color: AppColors.primary),
-                title: Text("Camera", style: GoogleFonts.poppins()),
-                onTap: () {
-                  Navigator.pop(context);
-                  _picker.pickImage(source: ImageSource.camera).then((f) {
-                    if (f != null) _processImage(f);
-                  });
-                },
-              ),
-              // Option to manually add notes for AI training and testing
-              ListTile(
-                leading: const Icon(Icons.note_add, color: Colors.orange),
-                title: Text(
-                  "Add Note (Train AI)",
-                  style: GoogleFonts.poppins(),
-                ),
-                onTap: () {
-                  Navigator.pop(context);
-                  _addTestNoteDialog();
-                },
-              ),
-            ],
+      if (mounted && _messages.isNotEmpty) {
+        setState(() {
+          _messages.last['text'] =
+              "Sorry, something went wrong while starting the analysis.";
+          _isTyping = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Image analysis setup failed: $e'),
+            backgroundColor: Colors.red,
           ),
         );
-      },
-    );
+      }
+      scrollToBottom();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.transparent,
-      appBar: AppBar(
-        elevation: 0,
-        backgroundColor: Colors.white,
-        centerTitle: true,
-        title: Row(
+      extendBodyBehindAppBar: false,
+      appBar: buildAppBar(),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              const Color(0xFFE0F7FA).withOpacity(0.3),
+              AppColors.primary.withOpacity(0.05),
+              const Color(0xFFF3E5F5).withOpacity(0.3),
+            ],
+          ),
+        ),
+        child: Column(
           children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.1),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.smart_toy_rounded,
-                color: AppColors.primary,
-                size: 20.sp,
-              ),
-            ),
-            SizedBox(width: 10.w),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  "StudyPal Assistant",
-                  style: GoogleFonts.poppins(
-                    color: Colors.black87,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16.sp,
-                  ),
-                ),
-                Row(
-                  children: [
-                    Container(
-                      width: 8,
-                      height: 8,
-                      decoration: BoxDecoration(
-                        color: _isTyping ? Colors.blue : Colors.green,
-                        shape: BoxShape.circle,
+            Expanded(
+              child: _isInitializing
+                  ? buildInitializingState()
+                  : _messages.isEmpty
+                  ? buildEmptyState()
+                  : ListView.builder(
+                      controller: _scrollController,
+                      physics: const BouncingScrollPhysics(),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 16.w,
+                        vertical: 20.h,
                       ),
+                      itemCount: _messages.length,
+                      itemBuilder: (context, index) =>
+                          _buildMessageRowAnimated(_messages[index], index),
                     ),
-                    SizedBox(width: 5.w),
-                    Text(
-                      _isTyping ? "Thinking..." : "Online",
-                      style: GoogleFonts.poppins(
-                        color: Colors.grey[500],
-                        fontSize: 12.sp,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
             ),
+            if (_isTyping) buildTypingIndicator(),
+            buildInputArea(),
           ],
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add, color: Colors.black54),
-            onPressed: _addTestNoteDialog, // Header main bhi shortcut de diya
+      ),
+    );
+  }
+
+  PreferredSizeWidget buildAppBar() {
+    return AppBar(
+      backgroundColor: AppColors.primary,
+      elevation: 0,
+      scrolledUnderElevation: 0,
+      centerTitle: true,
+
+      title: Column(
+        children: [
+          Text(
+            "StudyPal AI",
+            style: GoogleFonts.poppins(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 20.sp,
+            ),
+          ),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 8.w,
+                height: 8.h,
+                decoration: const BoxDecoration(
+                  color: Color(0xFF4CAF50),
+                  shape: BoxShape.circle,
+                ),
+              ),
+              SizedBox(width: 6.w),
+              Text(
+                "RAG Enabled • Online",
+                style: GoogleFonts.poppins(
+                  color: Colors.white.withOpacity(0.9),
+                  fontWeight: FontWeight.w400,
+                  fontSize: 12.sp,
+                ),
+              ),
+            ],
           ),
         ],
       ),
-      body: Column(
+      actions: [
+        PopupMenuButton<String>(
+          icon: Icon(Icons.more_vert, color: Colors.white, size: 24.sp),
+          onSelected: (value) async {
+            switch (value) {
+              case 'clear':
+                setState(() => _messages.clear());
+                break;
+              case 'seed':
+                await _seedInitialData();
+                break;
+              case 'reload':
+                setState(() => _isInitializing = true);
+                await _initializeRAG();
+                break;
+            }
+          },
+          itemBuilder: (context) => [
+            PopupMenuItem(
+              value: 'clear',
+              child: Row(
+                children: [
+                  Icon(Icons.clear_all, size: 20.sp),
+                  SizedBox(width: 8.w),
+                  const Text('Clear Chat'),
+                ],
+              ),
+            ),
+            PopupMenuItem(
+              value: 'seed',
+              child: Row(
+                children: [
+                  Icon(Icons.cloud_upload, size: 20.sp),
+                  SizedBox(width: 8.w),
+                  const Text('Seed Identity'),
+                ],
+              ),
+            ),
+            PopupMenuItem(
+              value: 'reload',
+              child: Row(
+                children: [
+                  Icon(Icons.refresh, size: 20.sp),
+                  SizedBox(width: 8.w),
+                  const Text('Reload Notes'),
+                ],
+              ),
+            ),
+          ],
+        ),
+        SizedBox(width: 4.w),
+      ],
+    );
+  }
+
+  Widget buildInitializingState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Expanded(
-            child: ListView.builder(
-              controller: _scrollController,
-              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 20.h),
-              itemCount: _messages.length,
-              itemBuilder: (context, index) {
-                final msg = _messages[index];
-                final isUser = msg['isUser'];
-                return Align(
-                  alignment: isUser
-                      ? Alignment.centerRight
-                      : Alignment.centerLeft,
-                  child: Container(
-                    margin: EdgeInsets.only(bottom: 16.h),
-                    constraints: BoxConstraints(maxWidth: 0.75.sw),
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 16.w,
-                      vertical: 12.h,
-                    ),
-                    decoration: BoxDecoration(
-                      color: isUser ? AppColors.primary : Colors.white,
-                      borderRadius: BorderRadius.only(
-                        topLeft: Radius.circular(16.r),
-                        topRight: Radius.circular(16.r),
-                        bottomLeft: isUser
-                            ? Radius.circular(16.r)
-                            : Radius.zero,
-                        bottomRight: isUser
-                            ? Radius.zero
-                            : Radius.circular(16.r),
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 5,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (msg['imageBytes'] != null)
-                          Padding(
-                            padding: EdgeInsets.only(bottom: 8.h),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(8.r),
-                              child: Image.memory(
-                                msg['imageBytes'],
-                                fit: BoxFit.cover,
-                              ),
-                            ),
-                          )
-                        else if (msg['imagePath'] != null)
-                          Padding(
-                            padding: EdgeInsets.only(bottom: 8.h),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(8.r),
-                              child: Image.file(File(msg['imagePath'])),
-                            ),
-                          )
-                        else if (msg['fileName'] != null)
-                          Padding(
-                            padding: EdgeInsets.only(bottom: 8.h),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(Icons.insert_drive_file, size: 28),
-                                SizedBox(width: 8.w),
-                                Flexible(
-                                  child: Text(
-                                    msg['fileName'],
-                                    style: GoogleFonts.poppins(
-                                      color: isUser
-                                          ? Colors.white
-                                          : Colors.black87,
-                                      fontSize: 14.sp,
-                                    ),
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        if ((msg['text'] ?? "").isNotEmpty)
-                          GptMarkdown(
-                            msg['text'],
-                            style: GoogleFonts.poppins(
-                              color: isUser ? Colors.white : Colors.black87,
-                              fontSize: 14.sp,
-                              height: 1.4,
-                            ),
-                          ),
-                        SizedBox(height: 4.h),
-                        Align(
-                          alignment: Alignment.bottomRight,
-                          child: Text(
-                            msg['time'] ?? "",
-                            style: GoogleFonts.poppins(
-                              color: isUser ? Colors.white70 : Colors.grey[400],
-                              fontSize: 10.sp,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
+          SizedBox(
+            width: 60.w,
+            height: 60.w,
+            child: const CircularProgressIndicator(
+              strokeWidth: 3,
+              valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
             ),
           ),
-          _buildInputArea(),
+          SizedBox(height: 24.h),
+          Text(
+            "Initializing RAG System...",
+            style: GoogleFonts.poppins(
+              fontSize: 16.sp,
+              fontWeight: FontWeight.w600,
+              color: AppColors.primary,
+            ),
+          ),
+          SizedBox(height: 8.h),
+          Text(
+            "Loading your notes from Firebase",
+            style: GoogleFonts.poppins(fontSize: 13.sp, color: AppColors.grey),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildInputArea() {
-    final bool isKeyboardOpen = MediaQuery.of(context).viewInsets.bottom > 0;
-    return Container(
-      padding: EdgeInsets.fromLTRB(
-        16.w,
-        10.h,
-        16.w,
-        isKeyboardOpen ? 20.h : 100.h,
-      ),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, -5),
-          ),
-        ],
-      ),
-      child: Row(
+  Widget buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          InkWell(
-            onTap: _showAttachmentOptions,
-            child: Padding(
-              padding: EdgeInsets.only(right: 10.w),
-              child: Icon(
-                Icons.attach_file,
-                color: Colors.grey[400],
-                size: 24.sp,
-              ),
-            ),
-          ),
-          Expanded(
-            child: Container(
-              padding: EdgeInsets.symmetric(horizontal: 16.w),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF5F7FB),
-                borderRadius: BorderRadius.circular(30.r),
-              ),
-              child: TextField(
-                controller: _controller,
-                style: GoogleFonts.poppins(fontSize: 14.sp),
-                decoration: InputDecoration(
-                  hintText: "Ask StudyPal...",
-                  hintStyle: GoogleFonts.poppins(
-                    color: Colors.grey[400],
-                    fontSize: 14.sp,
+          TweenAnimationBuilder<double>(
+            tween: Tween(begin: 0.0, end: 1.0),
+            duration: const Duration(milliseconds: 800),
+            curve: Curves.elasticOut,
+            builder: (context, value, child) {
+              return Transform.scale(scale: value, child: child);
+            },
+            child: Hero(
+              tag: 'studypal_bot',
+              child: Container(
+                padding: EdgeInsets.all(28.w),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      AppColors.primary.withOpacity(0.1),
+                      AppColors.primary.withOpacity(0.05),
+                    ],
                   ),
-                  border: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(vertical: 14.h),
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: AppColors.primary.withOpacity(0.3),
+                    width: 2,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primary.withOpacity(0.2),
+                      blurRadius: 30,
+                      spreadRadius: 5,
+                      offset: const Offset(0, 15),
+                    ),
+                  ],
+                ),
+                child: Icon(
+                  Icons.smart_toy_rounded,
+                  size: 72.sp,
+                  color: AppColors.primary,
                 ),
               ),
             ),
           ),
-          SizedBox(width: 12.w),
-          GestureDetector(
-            onTap: _sendMessage,
+          SizedBox(height: 28.h),
+          Text(
+            "Hi, I'm StudyPal!",
+            style: GoogleFonts.poppins(
+              fontSize: 26.sp,
+              fontWeight: FontWeight.w800,
+              color: AppColors.primary,
+            ),
+          ),
+          SizedBox(height: 12.h),
+          Text(
+            "I can search your notes or analyze\nimages to help you study better.",
+            textAlign: TextAlign.center,
+            style: GoogleFonts.poppins(
+              color: AppColors.grey,
+              fontSize: 15.sp,
+              height: 1.5,
+            ),
+          ),
+          SizedBox(height: 32.h),
+          Wrap(
+            alignment: WrapAlignment.center,
+            spacing: 12.w,
+            runSpacing: 12.h,
+            children: [
+              _buildAnimatedSuggestionChip("📚 Explain a topic", 0),
+              _buildAnimatedSuggestionChip("🔍 Search my notes", 1),
+              _buildAnimatedSuggestionChip("🖼️ Analyze image", 2),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMessageRowAnimated(Map<String, dynamic> msg, int index) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: const Duration(milliseconds: 400),
+      curve: Curves.easeOutQuart,
+      builder: (context, value, child) {
+        return Opacity(
+          opacity: value,
+          child: Transform.translate(
+            offset: Offset(0, 20 * (1 - value)),
+            child: child,
+          ),
+        );
+      },
+      child: buildMessageRow(msg),
+    );
+  }
+
+  Widget buildMessageRow(Map<String, dynamic> msg) {
+    final isUser = msg['isUser'];
+    return Padding(
+      padding: EdgeInsets.only(bottom: 16.h),
+      child: Row(
+        mainAxisAlignment: isUser
+            ? MainAxisAlignment.end
+            : MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          if (!isUser) ...[
+            Container(
+              width: 32.w,
+              height: 32.w,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    AppColors.primary,
+                    AppColors.primary.withOpacity(0.7),
+                  ],
+                ),
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.primary.withOpacity(0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Icon(
+                Icons.smart_toy_rounded,
+                size: 18.sp,
+                color: Colors.white,
+              ),
+            ),
+            SizedBox(width: 8.w),
+          ],
+          Flexible(
             child: Container(
-              padding: EdgeInsets.all(12.w),
-              decoration: const BoxDecoration(
+              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+              decoration: BoxDecoration(
+                gradient: isUser
+                    ? LinearGradient(
+                        colors: [
+                          AppColors.primary,
+                          AppColors.primary.withOpacity(0.85),
+                        ],
+                      )
+                    : null,
+                color: isUser ? null : Colors.white,
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(20.r),
+                  topRight: Radius.circular(20.r),
+                  bottomLeft: isUser
+                      ? Radius.circular(20.r)
+                      : Radius.circular(4.r),
+                  bottomRight: isUser
+                      ? Radius.circular(4.r)
+                      : Radius.circular(20.r),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: isUser
+                        ? AppColors.primary.withOpacity(0.25)
+                        : Colors.black.withOpacity(0.08),
+                    blurRadius: 12,
+                    spreadRadius: 0,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  GptMarkdown(
+                    msg['text'] ?? "",
+                    style: GoogleFonts.poppins(
+                      color: isUser ? Colors.white : AppColors.onSurface,
+                      fontSize: 14.sp,
+                    ),
+                  ),
+                  SizedBox(height: 6.h),
+                  Text(
+                    msg['time'] ?? "",
+                    style: GoogleFonts.poppins(
+                      color: isUser
+                          ? Colors.white.withOpacity(0.75)
+                          : AppColors.grey,
+                      fontSize: 10.sp,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (isUser) ...[
+            SizedBox(width: 8.w),
+            Container(
+              width: 32.w,
+              height: 32.w,
+              decoration: BoxDecoration(
                 color: AppColors.primary,
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black12,
-                    blurRadius: 4,
-                    offset: Offset(0, 2),
+                    color: AppColors.primary.withOpacity(0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
                   ),
                 ],
               ),
-              child: _isTyping
-                  ? SizedBox(
-                      width: 20.sp,
-                      height: 20.sp,
-                      child: const CircularProgressIndicator(
-                        color: Colors.white,
-                        strokeWidth: 2,
-                      ),
-                    )
-                  : Icon(Icons.send_rounded, color: Colors.white, size: 20.sp),
+              child: Icon(Icons.person, size: 18.sp, color: Colors.white),
             ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget buildTypingIndicator() {
+    return AnimatedOpacity(
+      opacity: _isTyping ? 1.0 : 0.0,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+      child: Padding(
+        padding: EdgeInsets.only(left: 50.w, bottom: 12.h),
+        child: Row(
+          children: [
+            _buildPulsingDots(),
+            SizedBox(width: 12.w),
+            Text(
+              "StudyPal is thinking...",
+              style: GoogleFonts.poppins(
+                color: AppColors.primary,
+                fontSize: 13.sp,
+                fontWeight: FontWeight.w500,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPulsingDots() {
+    return Row(
+      children: List.generate(3, (index) {
+        return Padding(
+          padding: EdgeInsets.only(right: 4.w),
+          child: TweenAnimationBuilder<double>(
+            key: ValueKey(_isTyping),
+            tween: Tween(begin: 0.0, end: 1.0),
+            duration: Duration(milliseconds: 600 + (index * 100)),
+            curve: Curves.easeInOut,
+            builder: (context, value, child) {
+              // Clamp opacity value to ensure it's within valid range
+              final opacityValue = (0.5 + (value * 0.5)).clamp(0.0, 1.0);
+              return Transform.scale(
+                scale: 0.7 + (value * 0.3),
+                child: Container(
+                  width: 8.w,
+                  height: 8.w,
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withOpacity(opacityValue),
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              );
+            },
+            onEnd: () {
+              if (_isTyping && mounted) {
+                setState(() {}); // Restart animation
+              }
+            },
+          ),
+        );
+      }),
+    );
+  }
+
+  Widget buildInputArea() {
+    return Container(
+      padding: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 16.h),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withOpacity(0.1),
+            blurRadius: 20,
+            offset: const Offset(0, -5),
           ),
         ],
+      ),
+      child: SafeArea(
+        top: false,
+        child: Row(
+          children: [
+            Container(
+              decoration: BoxDecoration(
+                color: AppColors.primary.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: IconButton(
+                icon: Icon(
+                  Icons.add_photo_alternate_rounded,
+                  color: AppColors.primary,
+                  size: 24.sp,
+                ),
+                onPressed: pickImage,
+              ),
+            ),
+            SizedBox(width: 12.w),
+            Expanded(
+              child: Container(
+                padding: EdgeInsets.symmetric(horizontal: 18.w),
+                decoration: BoxDecoration(
+                  color: AppColors.lightGrey,
+                  borderRadius: BorderRadius.circular(25.r),
+                  border: Border.all(
+                    color: AppColors.primary.withOpacity(0.1),
+                    width: 1,
+                  ),
+                ),
+                child: TextField(
+                  controller: _controller,
+                  textCapitalization: TextCapitalization.sentences,
+                  style: GoogleFonts.poppins(
+                    color: AppColors.onSurface,
+                    fontSize: 14.sp,
+                  ),
+                  decoration: InputDecoration(
+                    hintText: "Ask me anything...",
+                    hintStyle: GoogleFonts.poppins(
+                      color: AppColors.grey,
+                      fontSize: 14.sp,
+                    ),
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.symmetric(vertical: 14.h),
+                  ),
+                  onSubmitted: (_) => sendMessage(),
+                ),
+              ),
+            ),
+            SizedBox(width: 12.w),
+            AnimatedScale(
+              scale: _controller.text.isEmpty ? 0.9 : 1.0,
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeOutCubic,
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      AppColors.primary,
+                      AppColors.primary.withOpacity(0.8),
+                    ],
+                  ),
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primary.withOpacity(0.4),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: IconButton(
+                  icon: Icon(
+                    Icons.send_rounded,
+                    color: Colors.white,
+                    size: 22.sp,
+                  ),
+                  onPressed: sendMessage,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAnimatedSuggestionChip(String text, int index) {
+    return buildSuggestionChip(text);
+  }
+
+  Widget buildSuggestionChip(String text) {
+    return GestureDetector(
+      onTap: () {
+        _controller.text = text.replaceAll(RegExp(r'[^a-zA-Z\s]'), '').trim();
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeInOut,
+        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20.r),
+          border: Border.all(
+            color: AppColors.primary.withOpacity(0.3),
+            width: 1.5,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.primary.withOpacity(0.1),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Text(
+          text,
+          style: GoogleFonts.poppins(
+            color: AppColors.primary,
+            fontSize: 13.sp,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
       ),
     );
   }

@@ -7,8 +7,14 @@ import 'app_theme.dart';
 class GlobalAnimatedBackground extends StatefulWidget {
   final Widget child;
   final List<Color>? colors;
+  final bool animate;
 
-  const GlobalAnimatedBackground({super.key, required this.child, this.colors});
+  const GlobalAnimatedBackground({
+    super.key,
+    required this.child,
+    this.colors,
+    this.animate = true,
+  });
 
   @override
   State<GlobalAnimatedBackground> createState() =>
@@ -17,13 +23,11 @@ class GlobalAnimatedBackground extends StatefulWidget {
 
 class _GlobalAnimatedBackgroundState extends State<GlobalAnimatedBackground>
     with SingleTickerProviderStateMixin {
-  late final AnimationController _animationController;
-  late final Animation<Alignment> _topAlignmentAnimation;
-  late final Animation<Alignment> _bottomAlignmentAnimation;
+  AnimationController? _animationController;
+  Animation<Alignment>? _topAlignmentAnimation;
+  Animation<Alignment>? _bottomAlignmentAnimation;
 
-  @override
-  void initState() {
-    super.initState();
+  void _initAnimations() {
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 30),
@@ -46,7 +50,7 @@ class _GlobalAnimatedBackgroundState extends State<GlobalAnimatedBackground>
         tween: Tween(begin: Alignment.bottomLeft, end: Alignment.topLeft),
         weight: 1,
       ),
-    ]).animate(_animationController);
+    ]).animate(_animationController!);
 
     _bottomAlignmentAnimation = TweenSequence<Alignment>([
       TweenSequenceItem(
@@ -65,12 +69,33 @@ class _GlobalAnimatedBackgroundState extends State<GlobalAnimatedBackground>
         tween: Tween(begin: Alignment.topRight, end: Alignment.bottomRight),
         weight: 1,
       ),
-    ]).animate(_animationController);
+    ]).animate(_animationController!);
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.animate) {
+      _initAnimations();
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant GlobalAnimatedBackground oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.animate && _animationController == null) {
+      _initAnimations();
+    } else if (!widget.animate && _animationController != null) {
+      _animationController?.dispose();
+      _animationController = null;
+      _topAlignmentAnimation = null;
+      _bottomAlignmentAnimation = null;
+    }
   }
 
   @override
   void dispose() {
-    _animationController.dispose();
+    _animationController?.dispose();
     super.dispose();
   }
 
@@ -78,20 +103,36 @@ class _GlobalAnimatedBackgroundState extends State<GlobalAnimatedBackground>
   Widget build(BuildContext context) {
     final colors = widget.colors ?? AppTheme.primaryGradient;
 
+    if (!widget.animate || _animationController == null) {
+      return Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: colors,
+          ),
+        ),
+        child: widget.child,
+      );
+    }
+
     return AnimatedBuilder(
-      animation: _animationController,
+      animation: _animationController!,
+      child: widget.child,
       builder: (context, child) {
         return Container(
           width: double.infinity,
           height: double.infinity,
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              begin: _topAlignmentAnimation.value,
-              end: _bottomAlignmentAnimation.value,
+              begin: _topAlignmentAnimation!.value,
+              end: _bottomAlignmentAnimation!.value,
               colors: colors,
             ),
           ),
-          child: widget.child,
+          child: child,
         );
       },
     );

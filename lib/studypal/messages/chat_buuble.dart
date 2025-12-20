@@ -1,6 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gcr/studypal/Models/chat_models.dart';
+import 'package:gcr/studypal/theme/app_colors.dart';
 
 class ChatBubble extends StatelessWidget {
   final ChatBubbleData message;
@@ -18,21 +21,33 @@ class ChatBubble extends StatelessWidget {
           maxWidth: MediaQuery.of(context).size.width * 0.75,
         ),
         child: Container(
-          margin: const EdgeInsets.symmetric(vertical: 5),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          margin: EdgeInsets.symmetric(vertical: 5.h),
+          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
           decoration: BoxDecoration(
-            color: isMe ? const Color(0xFF7B7DBC) : Colors.white,
+            gradient: isMe
+                ? LinearGradient(
+                    colors: [
+                      AppColors.primary,
+                      AppColors.primary.withOpacity(0.85),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  )
+                : null,
+            color: isMe ? null : Colors.white,
             borderRadius: BorderRadius.only(
-              topLeft: const Radius.circular(20),
-              topRight: const Radius.circular(20),
-              bottomLeft: isMe ? const Radius.circular(20) : Radius.zero,
-              bottomRight: isMe ? Radius.zero : const Radius.circular(20),
+              topLeft: Radius.circular(20.r),
+              topRight: Radius.circular(20.r),
+              bottomLeft: isMe ? Radius.circular(20.r) : Radius.zero,
+              bottomRight: isMe ? Radius.zero : Radius.circular(20.r),
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 5,
-                offset: const Offset(0, 2),
+                color: isMe
+                    ? AppColors.primary.withOpacity(0.3)
+                    : Colors.black.withOpacity(0.06),
+                blurRadius: 8.r,
+                offset: Offset(0, 3.h),
               ),
             ],
           ),
@@ -42,25 +57,27 @@ class ChatBubble extends StatelessWidget {
             children: [
               Text(
                 message.content,
-                style: TextStyle(
+                style: GoogleFonts.poppins(
                   color: isMe ? Colors.white : Colors.black87,
-                  fontSize: 16,
+                  fontSize: 15.sp,
+                  fontWeight: FontWeight.w400,
                 ),
               ),
-              const SizedBox(height: 4),
+              SizedBox(height: 4.h),
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
                     _formatTime(message.timestamp),
-                    style: TextStyle(
-                      fontSize: 10,
+                    style: GoogleFonts.poppins(
+                      fontSize: 10.sp,
                       color: isMe ? Colors.white70 : Colors.grey[500],
+                      fontWeight: FontWeight.w400,
                     ),
                   ),
                   if (isMe) ...[
-                    const SizedBox(width: 4),
-                    const Icon(Icons.done_all, size: 14, color: Colors.white70),
+                    SizedBox(width: 4.w),
+                    Icon(Icons.done_all, size: 14.sp, color: Colors.white70),
                   ],
                 ],
               ),
@@ -72,10 +89,16 @@ class ChatBubble extends StatelessWidget {
   }
 
   String _formatTime(Timestamp timestamp) {
-    final DateTime date = timestamp.toDate();
-    final hour = date.hour > 12 ? date.hour - 12 : date.hour;
-    final period = date.hour >= 12 ? "PM" : "AM";
-    final minute = date.minute.toString().padLeft(2, '0');
-    return "$hour:$minute $period";
+    try {
+      final DateTime date = timestamp.toDate();
+      final hour = date.hour > 12
+          ? date.hour - 12
+          : (date.hour == 0 ? 12 : date.hour);
+      final period = date.hour >= 12 ? "PM" : "AM";
+      final minute = date.minute.toString().padLeft(2, '0');
+      return "$hour:$minute $period";
+    } catch (e) {
+      return ""; // Return empty string if timestamp parsing fails
+    }
   }
 }

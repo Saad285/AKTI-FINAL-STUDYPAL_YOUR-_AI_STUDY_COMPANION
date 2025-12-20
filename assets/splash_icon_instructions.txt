@@ -1,0 +1,21 @@
+SPLASH ICON SETUP INSTRUCTIONS
+================================
+
+You need to add a splash icon image file to this assets folder.
+
+Required file: splash_icon.png
+
+Recommended specifications:
+- Size: 512x512 pixels or 1024x1024 pixels
+- Format: PNG with transparent background
+- Content: School/education icon or your app logo
+- Simple design that works at various sizes
+
+After adding the image file:
+1. Make sure the file is named exactly: splash_icon.png
+2. Run: flutter pub get
+3. Run: dart run flutter_native_splash:create
+
+This will automatically generate native splash screens for Android and iOS.
+
+For now, you can use any education-related icon or your app logo.
