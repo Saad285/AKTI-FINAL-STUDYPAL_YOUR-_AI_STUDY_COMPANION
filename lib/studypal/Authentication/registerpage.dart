@@ -204,14 +204,14 @@ class _RegisterScreenState extends State<RegisterScreen>
                           child: Container(
                             padding: EdgeInsets.all(24.w),
                             decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.5),
+                              color: Colors.white.withValues(alpha: 0.5),
                               borderRadius: BorderRadius.circular(25.r),
                               border: Border.all(
-                                color: Colors.white.withOpacity(0.6),
+                                color: Colors.white.withValues(alpha: 0.6),
                               ),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.05),
+                                  color: Colors.black.withValues(alpha: 0.05),
                                   blurRadius: 20,
                                   spreadRadius: 5,
                                 ),
@@ -293,7 +293,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                                         backgroundColor: AppColors.primary,
                                         elevation: 5,
                                         shadowColor: AppColors.primary
-                                            .withOpacity(0.4),
+                                            .withValues(alpha: 0.4),
                                         shape: RoundedRectangleBorder(
                                           borderRadius: BorderRadius.circular(
                                             15.r,
@@ -351,17 +351,17 @@ class _RegisterScreenState extends State<RegisterScreen>
           decoration: BoxDecoration(
             color: isSelected
                 ? AppColors.primary
-                : Colors.white.withOpacity(0.7),
+                : Colors.white.withValues(alpha: 0.7),
             borderRadius: BorderRadius.circular(15.r),
             border: Border.all(
               color: isSelected
                   ? Colors.transparent
-                  : Colors.grey.withOpacity(0.3),
+                  : Colors.grey.withValues(alpha: 0.3),
             ),
             boxShadow: isSelected
                 ? [
                     BoxShadow(
-                      color: AppColors.primary.withOpacity(0.3),
+                      color: AppColors.primary.withValues(alpha: 0.3),
                       blurRadius: 10,
                       offset: const Offset(0, 5),
                     ),
@@ -409,7 +409,7 @@ class _RegisterScreenState extends State<RegisterScreen>
         labelStyle: GoogleFonts.poppins(color: Colors.grey[600]),
         prefixIcon: Icon(icon, color: AppColors.primary),
         filled: true,
-        fillColor: Colors.white.withOpacity(0.9),
+        fillColor: Colors.white.withValues(alpha: 0.9),
         contentPadding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 20.w),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(15.r),

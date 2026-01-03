@@ -143,10 +143,10 @@ class _CreateClassScreenState extends State<CreateClassScreen> {
                       vertical: 10.h,
                     ),
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.1),
+                      color: AppColors.primary.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(30.r),
                       border: Border.all(
-                        color: AppColors.primary.withOpacity(0.2),
+                        color: AppColors.primary.withValues(alpha: 0.2),
                       ),
                     ),
                     child: Row(
@@ -237,7 +237,7 @@ class _CreateClassScreenState extends State<CreateClassScreen> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
                       elevation: 8,
-                      shadowColor: AppColors.primary.withOpacity(0.4),
+                      shadowColor: AppColors.primary.withValues(alpha: 0.4),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16.r),
                       ),
@@ -305,7 +305,7 @@ class _CreateClassScreenState extends State<CreateClassScreen> {
                           borderRadius: BorderRadius.circular(16.r),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.grey.withOpacity(0.05),
+                              color: Colors.grey.withValues(alpha: 0.05),
                               blurRadius: 10,
                               offset: const Offset(0, 4),
                             ),
@@ -319,7 +319,7 @@ class _CreateClassScreenState extends State<CreateClassScreen> {
                           leading: Container(
                             padding: EdgeInsets.all(10.r),
                             decoration: BoxDecoration(
-                              color: accentColor.withOpacity(0.15),
+                              color: accentColor.withValues(alpha: 0.15),
                               borderRadius: BorderRadius.circular(12.r),
                             ),
                             child: Icon(
@@ -350,7 +350,7 @@ class _CreateClassScreenState extends State<CreateClassScreen> {
                             style: OutlinedButton.styleFrom(
                               foregroundColor: accentColor,
                               side: BorderSide(
-                                color: accentColor.withOpacity(0.5),
+                                color: accentColor.withValues(alpha: 0.5),
                               ),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(10.r),
@@ -400,7 +400,7 @@ class _CreateClassScreenState extends State<CreateClassScreen> {
             borderRadius: BorderRadius.circular(16.r),
             boxShadow: [
               BoxShadow(
-                color: Colors.grey.withOpacity(0.08),
+                color: Colors.grey.withValues(alpha: 0.08),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),

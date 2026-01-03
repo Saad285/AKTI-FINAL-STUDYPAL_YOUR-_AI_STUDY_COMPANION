@@ -211,7 +211,7 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
                   gradient: LinearGradient(
                     colors: [
                       AppColors.primary,
-                      AppColors.primary.withOpacity(0.85),
+                      AppColors.primary.withValues(alpha: 0.85),
                     ],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
@@ -222,7 +222,7 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: AppColors.primary.withOpacity(0.3),
+                      color: AppColors.primary.withValues(alpha: 0.3),
                       blurRadius: 20,
                       offset: const Offset(0, 10),
                     ),
@@ -260,7 +260,7 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
                     borderRadius: BorderRadius.circular(20.r),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.08),
+                        color: Colors.black.withValues(alpha: 0.08),
                         blurRadius: 15,
                         offset: const Offset(0, 5),
                       ),
@@ -400,7 +400,7 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
                         Icon(
                           Icons.error_outline,
                           size: 56.sp,
-                          color: Colors.redAccent.withOpacity(0.7),
+                          color: Colors.redAccent.withValues(alpha: 0.7),
                         ),
                         SizedBox(height: 16.h),
                         Text(
@@ -434,13 +434,13 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
                         Container(
                           padding: EdgeInsets.all(22.r),
                           decoration: BoxDecoration(
-                            color: AppColors.primary.withOpacity(0.1),
+                            color: AppColors.primary.withValues(alpha: 0.1),
                             shape: BoxShape.circle,
                           ),
                           child: Icon(
                             Icons.folder_open_rounded,
                             size: 54.sp,
-                            color: AppColors.primary.withOpacity(0.55),
+                            color: AppColors.primary.withValues(alpha: 0.55),
                           ),
                         ),
                         SizedBox(height: 18.h),
@@ -505,7 +505,7 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
                             borderRadius: BorderRadius.circular(18.r),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.06),
+                                color: Colors.black.withValues(alpha: 0.06),
                                 blurRadius: 14,
                                 offset: const Offset(0, 6),
                               ),
@@ -585,7 +585,7 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
                           borderRadius: BorderRadius.circular(20.r),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.06),
+                              color: Colors.black.withValues(alpha: 0.06),
                               blurRadius: 16,
                               offset: const Offset(0, 6),
                             ),
@@ -612,9 +612,8 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
                                     if (result != null &&
                                         result is Map &&
                                         result['navigateToChatbot'] == true) {
-                                      if (mounted) {
-                                        Navigator.pop(context, result);
-                                      }
+                                      if (!context.mounted) return;
+                                      Navigator.pop(context, result);
                                     }
                                   },
                             child: Padding(
@@ -630,8 +629,8 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
                                     decoration: BoxDecoration(
                                       gradient: LinearGradient(
                                         colors: [
-                                          iconColor.withOpacity(0.14),
-                                          iconColor.withOpacity(0.05),
+                                          iconColor.withValues(alpha: 0.14),
+                                          iconColor.withValues(alpha: 0.05),
                                         ],
                                         begin: Alignment.topLeft,
                                         end: Alignment.bottomRight,
@@ -670,8 +669,8 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
                                                 vertical: 4.h,
                                               ),
                                               decoration: BoxDecoration(
-                                                color: iconColor.withOpacity(
-                                                  0.12,
+                                                color: iconColor.withValues(
+                                                  alpha: 0.12,
                                                 ),
                                                 borderRadius:
                                                     BorderRadius.circular(12.r),
@@ -728,7 +727,9 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
                                     size: 16.sp,
                                     color: fileUrl.isEmpty
                                         ? Colors.grey[400]
-                                        : AppColors.primary.withOpacity(0.7),
+                                        : AppColors.primary.withValues(
+                                            alpha: 0.7,
+                                          ),
                                   ),
                                 ],
                               ),
@@ -924,12 +925,15 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
       padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 14.h),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [color.withOpacity(0.14), color.withOpacity(0.05)],
+          colors: [
+            color.withValues(alpha: 0.14),
+            color.withValues(alpha: 0.05),
+          ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(20.r),
-        border: Border.all(color: color.withOpacity(0.18), width: 1),
+        border: Border.all(color: color.withValues(alpha: 0.18), width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -942,7 +946,7 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: color.withOpacity(0.2),
+                  color: color.withValues(alpha: 0.2),
                   blurRadius: 12,
                   offset: const Offset(0, 4),
                 ),
@@ -956,7 +960,7 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
             style: GoogleFonts.poppins(
               fontSize: 22.sp,
               fontWeight: FontWeight.w700,
-              color: color.withOpacity(0.9),
+              color: color.withValues(alpha: 0.9),
             ),
           ),
           SizedBox(height: 2.h),

@@ -87,7 +87,7 @@ class TodayScheduleWidget extends StatelessWidget {
               borderRadius: BorderRadius.circular(20.r),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF404040).withOpacity(0.05),
+                  color: const Color(0xFF404040).withValues(alpha: 0.05),
                   spreadRadius: 0,
                   blurRadius: 20,
                   offset: const Offset(0, 4),
@@ -137,7 +137,7 @@ class TodayScheduleWidget extends StatelessWidget {
                 borderRadius: BorderRadius.circular(20.r),
                 boxShadow: [
                   BoxShadow(
-                    color: cardColor.withOpacity(0.4),
+                    color: cardColor.withValues(alpha: 0.4),
                     spreadRadius: 0,
                     blurRadius: 10,
                     offset: const Offset(0, 4),
@@ -151,7 +151,7 @@ class TodayScheduleWidget extends StatelessWidget {
                     height: 50.w,
                     width: 50.w,
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
+                      color: Colors.white.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(14.r),
                     ),
                     child: Icon(
@@ -184,7 +184,7 @@ class TodayScheduleWidget extends StatelessWidget {
                             Text(
                               "${data['time']}",
                               style: GoogleFonts.poppins(
-                                color: Colors.white.withOpacity(0.9),
+                                color: Colors.white.withValues(alpha: 0.9),
                                 fontSize: 13.sp,
                                 fontWeight: FontWeight.w500,
                               ),
@@ -200,7 +200,7 @@ class TodayScheduleWidget extends StatelessWidget {
                             Text(
                               data['type'] ?? 'On Campus',
                               style: GoogleFonts.poppins(
-                                color: Colors.white.withOpacity(0.9),
+                                color: Colors.white.withValues(alpha: 0.9),
                                 fontSize: 13.sp,
                                 fontWeight: FontWeight.w500,
                               ),

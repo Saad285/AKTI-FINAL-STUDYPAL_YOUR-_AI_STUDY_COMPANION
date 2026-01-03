@@ -1,6 +1,0 @@
-class GeminiConfig {
-  // IMPORTANT: Never commit your actual API key to version control
-  // Get your API key from: https://aistudio.google.com/app/apikey
-  
-  // Copy this file to gemini_config.dart and replace with your actual key
-  static const String apiKey = 'YOUR_API_KEY_HERE';

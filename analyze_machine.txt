@@ -1,0 +1,6 @@
+﻿INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|D:\\ai_integrated_gcr\\gcr\\lib\\studypal\\Authentication\\loginpage.dart|159|38|7|Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|D:\\ai_integrated_gcr\\gcr\\lib\\studypal\\Authentication\\loginpage.dart|160|38|7|Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check.
+INFO|LINT|FILE_NAMES|D:\\ai_integrated_gcr\\gcr\\lib\\studypal\\Models\\UserModels.dart|1|1|0|The file name 'UserModels.dart' isn't a lower_case_with_underscores identifier.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|D:\\ai_integrated_gcr\\gcr\\lib\\studypal\\common\\class_detail_screen.dart|616|55|7|Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|D:\\ai_integrated_gcr\\gcr\\lib\\studypal\\common\\classes_list_screen.dart|773|36|7|Don't use 'BuildContext's across async gaps.
+INFO|LINT|USE_BUILD_CONTEXT_SYNCHRONOUSLY|D:\\ai_integrated_gcr\\gcr\\lib\\studypal\\students\\hometab.dart|411|50|7|Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check.

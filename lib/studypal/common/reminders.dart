@@ -317,7 +317,7 @@ class _RemindersScreenState extends State<RemindersScreen>
       case ReminderType.quiz:
         return AppColors.secondary;
       case ReminderType.note:
-        return AppColors.primary.withOpacity(0.75);
+        return AppColors.primary.withValues(alpha: 0.75);
     }
   }
 
@@ -385,7 +385,7 @@ class _RemindersScreenState extends State<RemindersScreen>
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.15),
+                        color: Colors.black.withValues(alpha: 0.15),
                         blurRadius: 30,
                         offset: const Offset(0, -5),
                       ),
@@ -403,7 +403,7 @@ class _RemindersScreenState extends State<RemindersScreen>
                           gradient: LinearGradient(
                             colors: [
                               AppColors.primary,
-                              AppColors.primary.withOpacity(0.85),
+                              AppColors.primary.withValues(alpha: 0.85),
                             ],
                           ),
                           borderRadius: const BorderRadius.vertical(
@@ -415,11 +415,11 @@ class _RemindersScreenState extends State<RemindersScreen>
                             Container(
                               padding: const EdgeInsets.all(10),
                               decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.25),
+                                color: Colors.white.withValues(alpha: 0.25),
                                 borderRadius: BorderRadius.circular(14),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.black.withOpacity(0.1),
+                                    color: Colors.black.withValues(alpha: 0.1),
                                     blurRadius: 8,
                                     offset: const Offset(0, 2),
                                   ),
@@ -444,7 +444,7 @@ class _RemindersScreenState extends State<RemindersScreen>
                             const Spacer(),
                             Container(
                               decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.2),
+                                color: Colors.white.withValues(alpha: 0.2),
                                 shape: BoxShape.circle,
                               ),
                               child: IconButton(
@@ -482,14 +482,14 @@ class _RemindersScreenState extends State<RemindersScreen>
                                     color: AppColors.primary,
                                   ),
                                   hintStyle: GoogleFonts.poppins(
-                                    color: AppColors.onSurface.withOpacity(0.4),
+                                    color: AppColors.onSurface.withValues(alpha: 0.4),
                                   ),
                                   labelStyle: GoogleFonts.poppins(
                                     color: AppColors.primary,
                                     fontWeight: FontWeight.w500,
                                   ),
                                   filled: true,
-                                  fillColor: AppColors.primary.withOpacity(
+                                  fillColor: AppColors.primary.withValues(alpha: 
                                     0.05,
                                   ),
                                   border: OutlineInputBorder(
@@ -522,14 +522,14 @@ class _RemindersScreenState extends State<RemindersScreen>
                                       'Add additional details or notes...',
                                   alignLabelWithHint: true,
                                   hintStyle: GoogleFonts.poppins(
-                                    color: AppColors.onSurface.withOpacity(0.4),
+                                    color: AppColors.onSurface.withValues(alpha: 0.4),
                                   ),
                                   labelStyle: GoogleFonts.poppins(
                                     color: AppColors.primary,
                                     fontWeight: FontWeight.w500,
                                   ),
                                   filled: true,
-                                  fillColor: AppColors.primary.withOpacity(
+                                  fillColor: AppColors.primary.withValues(alpha: 
                                     0.05,
                                   ),
                                   border: OutlineInputBorder(
@@ -565,7 +565,7 @@ class _RemindersScreenState extends State<RemindersScreen>
                                     fontWeight: FontWeight.w500,
                                   ),
                                   filled: true,
-                                  fillColor: AppColors.primary.withOpacity(
+                                  fillColor: AppColors.primary.withValues(alpha: 
                                     0.05,
                                   ),
                                   border: OutlineInputBorder(
@@ -606,7 +606,7 @@ class _RemindersScreenState extends State<RemindersScreen>
                                 borderRadius: BorderRadius.circular(14),
                                 child: Container(
                                   decoration: BoxDecoration(
-                                    color: AppColors.primary.withOpacity(0.05),
+                                    color: AppColors.primary.withValues(alpha: 0.05),
                                     border: Border.all(
                                       color: Colors.grey.shade200,
                                     ),
@@ -620,7 +620,7 @@ class _RemindersScreenState extends State<RemindersScreen>
                                     leading: Container(
                                       padding: const EdgeInsets.all(8),
                                       decoration: BoxDecoration(
-                                        color: AppColors.primary.withOpacity(
+                                        color: AppColors.primary.withValues(alpha: 
                                           0.1,
                                         ),
                                         borderRadius: BorderRadius.circular(10),
@@ -662,7 +662,7 @@ class _RemindersScreenState extends State<RemindersScreen>
                                     colors: canSave
                                         ? [
                                             AppColors.primary,
-                                            AppColors.primary.withOpacity(0.8),
+                                            AppColors.primary.withValues(alpha: 0.8),
                                           ]
                                         : [
                                             Colors.grey.shade300,
@@ -674,7 +674,7 @@ class _RemindersScreenState extends State<RemindersScreen>
                                       ? [
                                           BoxShadow(
                                             color: AppColors.primary
-                                                .withOpacity(0.3),
+                                                .withValues(alpha: 0.3),
                                             blurRadius: 12,
                                             offset: const Offset(0, 4),
                                           ),
@@ -756,7 +756,7 @@ class _RemindersScreenState extends State<RemindersScreen>
             padding: const EdgeInsets.all(12),
             child: Container(
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
+                color: Colors.white.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: const Icon(
@@ -827,7 +827,7 @@ class _RemindersScreenState extends State<RemindersScreen>
                                     child: Container(
                                       padding: const EdgeInsets.all(16),
                                       decoration: BoxDecoration(
-                                        color: AppColors.error.withOpacity(
+                                        color: AppColors.error.withValues(alpha: 
                                           0.08,
                                         ),
                                         borderRadius: BorderRadius.circular(12),
@@ -853,7 +853,7 @@ class _RemindersScreenState extends State<RemindersScreen>
                                             "Your personal reminders will still be displayed",
                                             style: TextStyle(
                                               color: AppColors.error
-                                                  .withOpacity(0.8),
+                                                  .withValues(alpha: 0.8),
                                               fontSize: 13,
                                             ),
                                             textAlign: TextAlign.center,
@@ -912,7 +912,7 @@ class _RemindersScreenState extends State<RemindersScreen>
                     backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,
                     elevation: 4,
-                    shadowColor: AppColors.primary.withOpacity(0.4),
+                    shadowColor: AppColors.primary.withValues(alpha: 0.4),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14),
                     ),
@@ -958,7 +958,7 @@ class _RemindersScreenState extends State<RemindersScreen>
                         borderRadius: BorderRadius.circular(28),
                         boxShadow: [
                           BoxShadow(
-                            color: AppColors.primary.withOpacity(0.15),
+                            color: AppColors.primary.withValues(alpha: 0.15),
                             blurRadius: 40,
                             spreadRadius: 0,
                             offset: const Offset(0, 15),
@@ -979,8 +979,8 @@ class _RemindersScreenState extends State<RemindersScreen>
                                     begin: Alignment.topLeft,
                                     end: Alignment.bottomRight,
                                     colors: [
-                                      AppColors.primary.withOpacity(0.1),
-                                      AppColors.primary.withOpacity(0.05),
+                                      AppColors.primary.withValues(alpha: 0.1),
+                                      AppColors.primary.withValues(alpha: 0.05),
                                     ],
                                   ),
                                 ),
@@ -994,8 +994,8 @@ class _RemindersScreenState extends State<RemindersScreen>
                                     begin: Alignment.topLeft,
                                     end: Alignment.bottomRight,
                                     colors: [
-                                      AppColors.primary.withOpacity(0.2),
-                                      AppColors.primary.withOpacity(0.15),
+                                      AppColors.primary.withValues(alpha: 0.2),
+                                      AppColors.primary.withValues(alpha: 0.15),
                                     ],
                                   ),
                                 ),
@@ -1024,7 +1024,7 @@ class _RemindersScreenState extends State<RemindersScreen>
                             style: GoogleFonts.poppins(
                               fontSize: 16,
                               fontWeight: FontWeight.w500,
-                              color: AppColors.onSurface.withOpacity(0.7),
+                              color: AppColors.onSurface.withValues(alpha: 0.7),
                               height: 1.4,
                             ),
                           ),
@@ -1034,7 +1034,7 @@ class _RemindersScreenState extends State<RemindersScreen>
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               fontSize: 14,
-                              color: AppColors.onSurface.withOpacity(0.55),
+                              color: AppColors.onSurface.withValues(alpha: 0.55),
                               height: 1.5,
                             ),
                           ),
@@ -1094,10 +1094,10 @@ class _RemindersScreenState extends State<RemindersScreen>
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withOpacity(0.3), width: 2),
+        border: Border.all(color: color.withValues(alpha: 0.3), width: 2),
         boxShadow: [
           BoxShadow(
-            color: color.withOpacity(0.15),
+            color: color.withValues(alpha: 0.15),
             blurRadius: 15,
             offset: const Offset(0, 6),
           ),
@@ -1109,7 +1109,7 @@ class _RemindersScreenState extends State<RemindersScreen>
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.12),
+              color: color.withValues(alpha: 0.12),
               shape: BoxShape.circle,
             ),
             child: Icon(icon, color: color, size: 28),
@@ -1154,7 +1154,7 @@ class _RemindersScreenState extends State<RemindersScreen>
                       vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.1),
+                      color: AppColors.primary.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
@@ -1283,8 +1283,8 @@ class _ReminderCardState extends State<_ReminderCard> {
       transform: Matrix4.diagonal3Values(scale, scale, 1)
         ..setTranslationRaw(0.0, translationY, 0.0),
       child: InkWell(
-        splashColor: widget.accent.withOpacity(0.1),
-        highlightColor: widget.accent.withOpacity(0.05),
+        splashColor: widget.accent.withValues(alpha: 0.1),
+        highlightColor: widget.accent.withValues(alpha: 0.05),
         onTap: () {},
         onHover: (hovering) {
           setState(() => _isHovered = hovering);
@@ -1296,19 +1296,19 @@ class _ReminderCardState extends State<_ReminderCard> {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                widget.accent.withOpacity(0.10),
-                widget.accent.withOpacity(0.05),
+                widget.accent.withValues(alpha: 0.10),
+                widget.accent.withValues(alpha: 0.05),
               ],
             ),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: widget.accent.withOpacity(_isHovered ? 0.3 : 0.1),
+              color: widget.accent.withValues(alpha: _isHovered ? 0.3 : 0.1),
               width: _isHovered ? 2 : 1,
             ),
             boxShadow: _isHovered
                 ? [
                     BoxShadow(
-                      color: widget.accent.withOpacity(0.3),
+                      color: widget.accent.withValues(alpha: 0.3),
                       blurRadius: 20,
                       spreadRadius: 2,
                       offset: const Offset(0, 8),
@@ -1316,7 +1316,7 @@ class _ReminderCardState extends State<_ReminderCard> {
                   ]
                 : [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
+                      color: Colors.black.withValues(alpha: 0.05),
                       blurRadius: 8,
                       offset: const Offset(0, 2),
                     ),
@@ -1338,13 +1338,13 @@ class _ReminderCardState extends State<_ReminderCard> {
                           end: Alignment.bottomRight,
                           colors: [
                             widget.accent,
-                            widget.accent.withOpacity(0.7),
+                            widget.accent.withValues(alpha: 0.7),
                           ],
                         ),
                         borderRadius: BorderRadius.circular(12),
                         boxShadow: [
                           BoxShadow(
-                            color: widget.accent.withOpacity(0.3),
+                            color: widget.accent.withValues(alpha: 0.3),
                             blurRadius: 8,
                             offset: const Offset(0, 2),
                           ),
@@ -1367,7 +1367,7 @@ class _ReminderCardState extends State<_ReminderCard> {
                                 ?.copyWith(
                                   fontWeight: FontWeight.w700,
                                   fontSize: 16,
-                                  color: AppColors.onSurface.withOpacity(0.9),
+                                  color: AppColors.onSurface.withValues(alpha: 0.9),
                                   letterSpacing: -0.2,
                                 ),
                           ),
@@ -1383,7 +1383,7 @@ class _ReminderCardState extends State<_ReminderCard> {
                                     ? AppColors.error
                                     : (dueToday
                                           ? AppColors.primary
-                                          : AppColors.onSurface.withOpacity(
+                                          : AppColors.onSurface.withValues(alpha: 
                                               0.6,
                                             )),
                               ),
@@ -1397,7 +1397,7 @@ class _ReminderCardState extends State<_ReminderCard> {
                                           : (dueToday
                                                 ? AppColors.primary
                                                 : AppColors.onSurface
-                                                      .withOpacity(0.6)),
+                                                      .withValues(alpha: 0.6)),
                                       fontWeight: FontWeight.w500,
                                     ),
                               ),
@@ -1427,7 +1427,7 @@ class _ReminderCardState extends State<_ReminderCard> {
                                         Icon(
                                           Icons.book_rounded,
                                           size: 13,
-                                          color: widget.accent.withOpacity(0.8),
+                                          color: widget.accent.withValues(alpha: 0.8),
                                         ),
                                         const SizedBox(width: 4),
                                         Flexible(
@@ -1460,7 +1460,7 @@ class _ReminderCardState extends State<_ReminderCard> {
                         onPressed: widget.onDelete,
                         icon: Icon(
                           Icons.delete_outline,
-                          color: AppColors.onSurface.withOpacity(0.6),
+                          color: AppColors.onSurface.withValues(alpha: 0.6),
                         ),
                       ),
                   ],
@@ -1472,13 +1472,13 @@ class _ReminderCardState extends State<_ReminderCard> {
                     child: Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: AppColors.surface.withOpacity(0.7),
+                        color: AppColors.surface.withValues(alpha: 0.7),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
                         widget.note.description!,
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: AppColors.onSurface.withOpacity(0.75),
+                          color: AppColors.onSurface.withValues(alpha: 0.75),
                         ),
                       ),
                     ),
@@ -1494,10 +1494,10 @@ class _ReminderCardState extends State<_ReminderCard> {
                         vertical: 6,
                       ),
                       decoration: BoxDecoration(
-                        color: widget.accent.withOpacity(0.15),
+                        color: widget.accent.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
-                          color: widget.accent.withOpacity(0.3),
+                          color: widget.accent.withValues(alpha: 0.3),
                           width: 1,
                         ),
                       ),

@@ -24,7 +24,7 @@ class ScheduleCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Random color applied for aesthetics
-    Color cardColor = AppColors.randomAesthetic().withOpacity(0.85);
+    Color cardColor = AppColors.randomAesthetic().withValues(alpha: 0.85);
 
     return GestureDetector(
       onTap: onTap, // Card is clickable only if onTap is provided (not null)
@@ -36,7 +36,7 @@ class ScheduleCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(20.r),
           boxShadow: [
             BoxShadow(
-              color: cardColor.withOpacity(0.3),
+              color: cardColor.withValues(alpha: 0.3),
               blurRadius: 8,
               offset: const Offset(0, 4),
             ),
@@ -94,7 +94,7 @@ class ScheduleCard extends StatelessWidget {
                           vertical: 5.h,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.3),
+                          color: Colors.white.withValues(alpha: 0.3),
                           borderRadius: BorderRadius.circular(10.r),
                         ),
                         child: Text(

@@ -78,7 +78,7 @@ class TodayScheduleWidget extends StatelessWidget {
                   borderRadius: BorderRadius.circular(20.r),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF404040).withOpacity(0.05),
+                      color: const Color(0xFF404040).withValues(alpha: 0.05),
                       spreadRadius: 0,
                       blurRadius: 20,
                       offset: const Offset(0, 4),
@@ -121,11 +121,11 @@ class TodayScheduleWidget extends StatelessWidget {
                   margin: EdgeInsets.only(bottom: 12.h),
                   padding: EdgeInsets.all(16.w),
                   decoration: BoxDecoration(
-                    color: AppColors.randomAesthetic(idx).withOpacity(0.92),
+                    color: AppColors.randomAesthetic(idx).withValues(alpha: 0.92),
                     borderRadius: BorderRadius.circular(20.r),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFF404040).withOpacity(0.05),
+                        color: const Color(0xFF404040).withValues(alpha: 0.05),
                         spreadRadius: 0,
                         blurRadius: 15,
                         offset: const Offset(0, 5),
@@ -139,7 +139,7 @@ class TodayScheduleWidget extends StatelessWidget {
                         height: 50.w,
                         width: 50.w,
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.12),
+                          color: Colors.white.withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(14.r),
                         ),
                         child: Icon(

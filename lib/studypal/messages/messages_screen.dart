@@ -462,8 +462,8 @@ class _InboxCard extends StatelessWidget {
                                       ),
                                       decoration: BoxDecoration(
                                         color: isUnseen
-                                            ? Colors.blue.withOpacity(0.1)
-                                            : Colors.grey.withOpacity(0.1),
+                                            ? Colors.blue.withValues(alpha: 0.1)
+                                            : Colors.grey.withValues(alpha: 0.1),
                                         borderRadius: BorderRadius.circular(
                                           12.r,
                                         ),

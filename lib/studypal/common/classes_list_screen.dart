@@ -123,7 +123,10 @@ class _ClassesListScreenState extends State<ClassesListScreen> {
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [Colors.white, AppColors.primary.withOpacity(0.02)],
+                  colors: [
+                    Colors.white,
+                    AppColors.primary.withValues(alpha: 0.02),
+                  ],
                 ),
               ),
               child: Column(
@@ -137,7 +140,7 @@ class _ClassesListScreenState extends State<ClassesListScreen> {
                         end: Alignment.bottomRight,
                         colors: [
                           AppColors.primary,
-                          AppColors.primary.withOpacity(0.8),
+                          AppColors.primary.withValues(alpha: 0.8),
                         ],
                       ),
                       borderRadius: const BorderRadius.only(
@@ -150,10 +153,10 @@ class _ClassesListScreenState extends State<ClassesListScreen> {
                         Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
+                            color: Colors.white.withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
-                              color: Colors.white.withOpacity(0.3),
+                              color: Colors.white.withValues(alpha: 0.3),
                               width: 2,
                             ),
                           ),
@@ -181,7 +184,7 @@ class _ClassesListScreenState extends State<ClassesListScreen> {
                                 'Connect with your teacher',
                                 style: GoogleFonts.poppins(
                                   fontSize: 13,
-                                  color: Colors.white.withOpacity(0.9),
+                                  color: Colors.white.withValues(alpha: 0.9),
                                 ),
                               ),
                             ],
@@ -199,10 +202,10 @@ class _ClassesListScreenState extends State<ClassesListScreen> {
                         Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: AppColors.primary.withOpacity(0.05),
+                            color: AppColors.primary.withValues(alpha: 0.05),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                              color: AppColors.primary.withOpacity(0.1),
+                              color: AppColors.primary.withValues(alpha: 0.1),
                             ),
                           ),
                           child: Row(
@@ -250,7 +253,7 @@ class _ClassesListScreenState extends State<ClassesListScreen> {
                               margin: const EdgeInsets.all(12),
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                color: AppColors.primary.withOpacity(0.1),
+                                color: AppColors.primary.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(10),
                               ),
                               child: Icon(
@@ -470,8 +473,8 @@ class _ClassesListScreenState extends State<ClassesListScreen> {
                                   backgroundColor: AppColors.primary,
                                   foregroundColor: Colors.white,
                                   elevation: 4,
-                                  shadowColor: AppColors.primary.withOpacity(
-                                    0.4,
+                                  shadowColor: AppColors.primary.withValues(
+                                    alpha: 0.4,
                                   ),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(14),
@@ -652,7 +655,7 @@ class _ClassesListScreenState extends State<ClassesListScreen> {
                   Container(
                     padding: EdgeInsets.all(24.r),
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.1),
+                      color: AppColors.primary.withValues(alpha: 0.1),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
@@ -738,7 +741,7 @@ class _ClassCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(24.r),
           boxShadow: [
             BoxShadow(
-              color: cardColor.withOpacity(0.4),
+              color: cardColor.withValues(alpha: 0.4),
               blurRadius: 12,
               offset: const Offset(0, 8),
               spreadRadius: -2,
@@ -766,6 +769,8 @@ class _ClassCard extends StatelessWidget {
                 ),
               );
 
+              if (!context.mounted) return;
+
               // Pass chatbot navigation request to callback
               if (result != null &&
                   result is Map &&
@@ -790,7 +795,7 @@ class _ClassCard extends StatelessWidget {
                       vertical: 4.h,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.1),
+                      color: Colors.black.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8.r),
                     ),
                     child: Text(
@@ -822,7 +827,7 @@ class _ClassCard extends StatelessWidget {
                       Text(
                         "Tap to view details",
                         style: GoogleFonts.poppins(
-                          color: Colors.white.withOpacity(0.8),
+                          color: Colors.white.withValues(alpha: 0.8),
                           fontSize: 12.sp,
                           fontWeight: FontWeight.w500,
                         ),
@@ -830,7 +835,7 @@ class _ClassCard extends StatelessWidget {
                       Container(
                         padding: EdgeInsets.all(8.r),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
+                          color: Colors.white.withValues(alpha: 0.2),
                           shape: BoxShape.circle,
                         ),
                         child: Icon(

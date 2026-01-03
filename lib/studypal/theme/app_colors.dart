@@ -45,10 +45,10 @@ class AppColors {
 
   // Universal app gradient (use these three everywhere)
   // Colors specified by the user:
-  // const Color(0xFFE0F7FA), AppColors.primary.withOpacity(0.2), const Color(0xFFF3E5F5)
+  // const Color(0xFFE0F7FA), AppColors.primary.withValues(alpha: 0.2), const Color(0xFFF3E5F5)
   static final List<Color> universalGradient = [
     const Color(0xFFE0F7FA),
-    primary.withOpacity(0.2),
+    primary.withValues(alpha: 0.2),
     const Color(0xFFF3E5F5),
   ];
 

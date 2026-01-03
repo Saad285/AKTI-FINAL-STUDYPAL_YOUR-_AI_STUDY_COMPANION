@@ -49,7 +49,7 @@ class ActionButton extends StatelessWidget {
               ? [
                   BoxShadow(
                     // Shadow matches the active random color
-                    color: activeColor.withOpacity(0.3),
+                    color: activeColor.withValues(alpha: 0.3),
                     blurRadius: 8,
                     offset: const Offset(0, 4),
                   ),
@@ -57,7 +57,7 @@ class ActionButton extends StatelessWidget {
               : [
                   BoxShadow(
                     // Styling for the disabled look
-                    color: Colors.black.withOpacity(0.1),
+                    color: Colors.black.withValues(alpha: 0.1),
                     blurRadius: 4,
                   ),
                 ],

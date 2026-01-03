@@ -96,7 +96,10 @@ class _HometabState extends State<Hometab> {
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [Colors.white, AppColors.primary.withOpacity(0.02)],
+                colors: [
+                  Colors.white,
+                  AppColors.primary.withValues(alpha: 0.02),
+                ],
               ),
             ),
             child: Column(
@@ -111,7 +114,7 @@ class _HometabState extends State<Hometab> {
                       end: Alignment.bottomRight,
                       colors: [
                         AppColors.primary,
-                        AppColors.primary.withOpacity(0.8),
+                        AppColors.primary.withValues(alpha: 0.8),
                       ],
                     ),
                     borderRadius: const BorderRadius.only(
@@ -124,10 +127,10 @@ class _HometabState extends State<Hometab> {
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
+                          color: Colors.white.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
-                            color: Colors.white.withOpacity(0.3),
+                            color: Colors.white.withValues(alpha: 0.3),
                             width: 2,
                           ),
                         ),
@@ -155,7 +158,7 @@ class _HometabState extends State<Hometab> {
                               'Connect with your teacher',
                               style: GoogleFonts.poppins(
                                 fontSize: 13,
-                                color: Colors.white.withOpacity(0.9),
+                                color: Colors.white.withValues(alpha: 0.9),
                               ),
                             ),
                           ],
@@ -174,10 +177,10 @@ class _HometabState extends State<Hometab> {
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: AppColors.primary.withOpacity(0.05),
+                          color: AppColors.primary.withValues(alpha: 0.05),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: AppColors.primary.withOpacity(0.1),
+                            color: AppColors.primary.withValues(alpha: 0.1),
                           ),
                         ),
                         child: Row(
@@ -207,7 +210,7 @@ class _HometabState extends State<Hometab> {
                           borderRadius: BorderRadius.circular(16),
                           boxShadow: [
                             BoxShadow(
-                              color: AppColors.primary.withOpacity(0.1),
+                              color: AppColors.primary.withValues(alpha: 0.1),
                               blurRadius: 20,
                               offset: const Offset(0, 4),
                             ),
@@ -236,7 +239,7 @@ class _HometabState extends State<Hometab> {
                               margin: const EdgeInsets.all(12),
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                color: AppColors.primary.withOpacity(0.1),
+                                color: AppColors.primary.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(10),
                               ),
                               child: Icon(
@@ -404,12 +407,11 @@ class _HometabState extends State<Hometab> {
                                     'students': FieldValue.arrayUnion([userId]),
                                   });
 
+                                  if (!mounted) return;
+
                                   // Close dialog immediately
-                                  if (context.mounted) {
-                                    FocusManager.instance.primaryFocus
-                                        ?.unfocus();
-                                    Navigator.of(context).pop();
-                                  }
+                                  FocusManager.instance.primaryFocus?.unfocus();
+                                  Navigator.of(context).pop();
 
                                   // Dispose controller after navigation completes
                                   Future.delayed(
@@ -540,7 +542,9 @@ class _HometabState extends State<Hometab> {
                                 backgroundColor: AppColors.primary,
                                 foregroundColor: Colors.white,
                                 elevation: 4,
-                                shadowColor: AppColors.primary.withOpacity(0.4),
+                                shadowColor: AppColors.primary.withValues(
+                                  alpha: 0.4,
+                                ),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(14),
                                 ),
@@ -584,7 +588,7 @@ class _HometabState extends State<Hometab> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [Colors.white, AppColors.primary.withOpacity(0.05)],
+            colors: [Colors.white, AppColors.primary.withValues(alpha: 0.05)],
           ),
         ),
         child: ListView(
@@ -599,7 +603,7 @@ class _HometabState extends State<Hometab> {
                   end: Alignment.bottomRight,
                   colors: [
                     AppColors.primary,
-                    AppColors.primary.withOpacity(0.8),
+                    AppColors.primary.withValues(alpha: 0.8),
                   ],
                 ),
               ),
@@ -614,7 +618,7 @@ class _HometabState extends State<Hometab> {
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
+                          color: Colors.black.withValues(alpha: 0.1),
                           blurRadius: 10,
                           offset: Offset(0, 4),
                         ),
@@ -640,7 +644,7 @@ class _HometabState extends State<Hometab> {
                   Text(
                     userEmail,
                     style: GoogleFonts.poppins(
-                      color: Colors.white.withOpacity(0.9),
+                      color: Colors.white.withValues(alpha: 0.9),
                       fontSize: 13.sp,
                       fontWeight: FontWeight.w400,
                     ),
@@ -773,7 +777,7 @@ class _HometabState extends State<Hometab> {
       leading: Container(
         padding: EdgeInsets.all(8.w),
         decoration: BoxDecoration(
-          color: (iconColor ?? AppColors.primary).withOpacity(0.1),
+          color: (iconColor ?? AppColors.primary).withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(10.r),
         ),
         child: Icon(icon, color: iconColor ?? AppColors.primary, size: 22.sp),
@@ -1261,7 +1265,7 @@ class _HometabState extends State<Hometab> {
                                           BoxShadow(
                                             color: const Color(
                                               0xFFFFB13D,
-                                            ).withOpacity(0.4),
+                                            ).withValues(alpha: 0.4),
                                             blurRadius: 10,
                                             offset: const Offset(0, 4),
                                           ),
@@ -1471,7 +1475,7 @@ class _RemindersDueTodayDialog extends StatelessWidget {
                 gradient: LinearGradient(
                   colors: [
                     AppColors.primary,
-                    AppColors.primary.withOpacity(0.8),
+                    AppColors.primary.withValues(alpha: 0.8),
                   ],
                 ),
                 borderRadius: BorderRadius.only(
@@ -1565,7 +1569,7 @@ class _RemindersDueTodayDialog extends StatelessWidget {
                               border: Border.all(
                                 color: completed
                                     ? Colors.grey[300]!
-                                    : AppColors.primary.withOpacity(0.2),
+                                    : AppColors.primary.withValues(alpha: 0.2),
                                 width: 1.5,
                               ),
                             ),

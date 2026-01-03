@@ -71,7 +71,7 @@ class _StudentHomepageState extends State<StudentHomepage> {
                   end: Alignment.bottomRight,
                   colors: [
                     AppColors.primary,
-                    AppColors.primary.withOpacity(0.8),
+                    AppColors.primary.withValues(alpha: 0.8),
                   ],
                 ),
               ),
@@ -235,7 +235,7 @@ class _StudentHomepageState extends State<StudentHomepage> {
         child: Icon(
           isSelected ? activeIcon : icon,
           size: isSelected ? 28 : 26,
-          color: isSelected ? Colors.white : Colors.white.withOpacity(0.6),
+          color: isSelected ? Colors.white : Colors.white.withValues(alpha: 0.6),
         ),
       ),
     );
@@ -277,7 +277,7 @@ class _StudentHomepageState extends State<StudentHomepage> {
           borderRadius: BorderRadius.circular(30.r),
           boxShadow: [
             BoxShadow(
-              color: AppColors.primary.withOpacity(0.3),
+              color: AppColors.primary.withValues(alpha: 0.3),
               blurRadius: 20,
               spreadRadius: 0,
               offset: const Offset(0, 4),

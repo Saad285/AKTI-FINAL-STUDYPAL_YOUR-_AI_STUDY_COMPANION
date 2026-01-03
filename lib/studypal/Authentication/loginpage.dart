@@ -155,18 +155,17 @@ class _LoginScreenState extends State<LoginScreen> {
               );
               final error = await authProvider.resetPassword(email);
 
-              if (mounted) {
-                ScaffoldMessenger.of(context).clearSnackBars();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      error ?? 'Password reset email sent! Check your inbox.',
-                    ),
-                    backgroundColor: error == null ? Colors.green : Colors.red,
-                    duration: Duration(seconds: 4),
+              if (!context.mounted) return;
+              ScaffoldMessenger.of(context).clearSnackBars();
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    error ?? 'Password reset email sent! Check your inbox.',
                   ),
-                );
-              }
+                  backgroundColor: error == null ? Colors.green : Colors.red,
+                  duration: Duration(seconds: 4),
+                ),
+              );
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primary,
@@ -221,7 +220,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: AppColors.primary.withOpacity(0.3),
+                        color: AppColors.primary.withValues(alpha: 0.3),
                         blurRadius: 20,
                         offset: Offset(0, 5),
                       ),
@@ -262,14 +261,14 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: Container(
                       padding: EdgeInsets.all(24.w),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.5),
+                        color: Colors.white.withValues(alpha: 0.5),
                         borderRadius: BorderRadius.circular(25.r),
                         border: Border.all(
-                          color: Colors.white.withOpacity(0.6),
+                          color: Colors.white.withValues(alpha: 0.6),
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
+                            color: Colors.black.withValues(alpha: 0.05),
                             blurRadius: 20,
                             spreadRadius: 5,
                           ),
@@ -343,8 +342,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: AppColors.primary,
                                   elevation: 5,
-                                  shadowColor: AppColors.primary.withOpacity(
-                                    0.4,
+                                  shadowColor: AppColors.primary.withValues(
+                                    alpha: 0.4,
                                   ),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(15.r),
@@ -436,7 +435,9 @@ class _LoginScreenState extends State<LoginScreen> {
         labelStyle: GoogleFonts.poppins(color: Colors.grey[600]),
         prefixIcon: Icon(icon, color: AppColors.primary),
         filled: true,
-        fillColor: Colors.white.withOpacity(0.9), // Slightly transparent white
+        fillColor: Colors.white.withValues(
+          alpha: 0.9,
+        ), // Slightly transparent white
         contentPadding: EdgeInsets.symmetric(vertical: 18.h, horizontal: 20.w),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(15.r),
@@ -444,7 +445,7 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(15.r),
-          borderSide: BorderSide(color: Colors.grey.withOpacity(0.1)),
+          borderSide: BorderSide(color: Colors.grey.withValues(alpha: 0.1)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(15.r),

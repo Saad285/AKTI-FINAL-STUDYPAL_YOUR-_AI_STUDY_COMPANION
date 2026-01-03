@@ -9,8 +9,7 @@ import 'package:gcr/firebase_options.dart';
 import 'package:gcr/studypal/Authentication/loginpage.dart';
 import 'package:gcr/studypal/students/homepage.dart';
 import 'package:gcr/studypal/theme/app_colors.dart';
-import 'package:gcr/studypal/providers/auth_provider.dart';
-import 'package:gcr/studypal/providers/teacher_provider.dart';
+import 'package:gcr/studypal/providers/app_providers.dart';
 import 'package:gcr/studypal/common/splash_screen.dart';
 
 void main() {
@@ -38,15 +37,7 @@ void main() {
         );
       }
 
-      runApp(
-        MultiProvider(
-          providers: [
-            ChangeNotifierProvider(create: (_) => AuthProvider()),
-            ChangeNotifierProvider(create: (_) => TeacherProvider()),
-          ],
-          child: const MyApp(),
-        ),
-      );
+      runApp(MultiProvider(providers: appProviders, child: const MyApp()));
     },
     (error, stack) {
       debugPrint('Zoned error: $error');

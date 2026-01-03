@@ -242,12 +242,12 @@ class _UploadMaterialScreenState extends State<UploadMaterialScreen> {
                 padding: EdgeInsets.symmetric(vertical: 30.h),
                 decoration: BoxDecoration(
                   color: _pickedFile == null
-                      ? AppColors.primary.withOpacity(0.08)
-                      : Colors.green.withOpacity(0.08),
+                      ? AppColors.primary.withValues(alpha: 0.08)
+                      : Colors.green.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(20.r),
                   border: Border.all(
                     color: _pickedFile == null
-                        ? AppColors.primary.withOpacity(0.3)
+                        ? AppColors.primary.withValues(alpha: 0.3)
                         : Colors.green,
                     width: 1.5,
                     style: BorderStyle.solid,
@@ -262,7 +262,7 @@ class _UploadMaterialScreenState extends State<UploadMaterialScreen> {
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
+                            color: Colors.black.withValues(alpha: 0.05),
                             blurRadius: 10,
                             offset: const Offset(0, 4),
                           ),
@@ -349,7 +349,7 @@ class _UploadMaterialScreenState extends State<UploadMaterialScreen> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   elevation: 5,
-                  shadowColor: AppColors.primary.withOpacity(0.4),
+                  shadowColor: AppColors.primary.withValues(alpha: 0.4),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16.r),
                   ),

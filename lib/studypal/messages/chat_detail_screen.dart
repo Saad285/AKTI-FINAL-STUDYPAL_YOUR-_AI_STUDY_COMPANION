@@ -251,8 +251,8 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                           boxShadow: [
                             BoxShadow(
                               color: isMe
-                                  ? AppColors.primary.withOpacity(0.22)
-                                  : Colors.black.withOpacity(0.08),
+                                  ? AppColors.primary.withValues(alpha: 0.22)
+                                  : Colors.black.withValues(alpha: 0.08),
                               blurRadius: 10,
                               offset: const Offset(0, 4),
                             ),
@@ -278,7 +278,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
               color: Colors.white,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.08),
+                  color: Colors.black.withValues(alpha: 0.08),
                   offset: const Offset(0, -2),
                   blurRadius: 10,
                 ),

@@ -28,7 +28,7 @@ class ChatBubble extends StatelessWidget {
                 ? LinearGradient(
                     colors: [
                       AppColors.primary,
-                      AppColors.primary.withOpacity(0.85),
+                      AppColors.primary.withValues(alpha: 0.85),
                     ],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
@@ -44,8 +44,8 @@ class ChatBubble extends StatelessWidget {
             boxShadow: [
               BoxShadow(
                 color: isMe
-                    ? AppColors.primary.withOpacity(0.3)
-                    : Colors.black.withOpacity(0.06),
+                    ? AppColors.primary.withValues(alpha: 0.3)
+                    : Colors.black.withValues(alpha: 0.06),
                 blurRadius: 8.r,
                 offset: Offset(0, 3.h),
               ),

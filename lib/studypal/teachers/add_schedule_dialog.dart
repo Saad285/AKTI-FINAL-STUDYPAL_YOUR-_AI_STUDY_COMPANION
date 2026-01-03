@@ -128,7 +128,7 @@ class _AddScheduleDialogState extends State<AddScheduleDialog> {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.1),
+                  color: AppColors.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
@@ -187,7 +187,7 @@ class _AddScheduleDialogState extends State<AddScheduleDialog> {
               Container(
                 padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 4.h),
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.05),
+                  color: AppColors.primary.withValues(alpha: 0.05),
                   borderRadius: BorderRadius.circular(14.r),
                   border: Border.all(color: Colors.grey.shade200),
                 ),
@@ -240,7 +240,7 @@ class _AddScheduleDialogState extends State<AddScheduleDialog> {
                     vertical: 18.h,
                   ),
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.05),
+                    color: AppColors.primary.withValues(alpha: 0.05),
                     borderRadius: BorderRadius.circular(14.r),
                     border: Border.all(color: Colors.grey.shade200),
                   ),
@@ -352,13 +352,13 @@ class _AddScheduleDialogState extends State<AddScheduleDialog> {
                   gradient: LinearGradient(
                     colors: [
                       AppColors.primary,
-                      AppColors.primary.withOpacity(0.8),
+                      AppColors.primary.withValues(alpha: 0.8),
                     ],
                   ),
                   borderRadius: BorderRadius.circular(14.r),
                   boxShadow: [
                     BoxShadow(
-                      color: AppColors.primary.withOpacity(0.3),
+                      color: AppColors.primary.withValues(alpha: 0.3),
                       blurRadius: 8,
                       offset: const Offset(0, 4),
                     ),
@@ -409,8 +409,8 @@ class _AddScheduleDialogState extends State<AddScheduleDialog> {
             gradient: isSelected
                 ? LinearGradient(
                     colors: [
-                      AppColors.primary.withOpacity(0.15),
-                      AppColors.primary.withOpacity(0.08),
+                      AppColors.primary.withValues(alpha: 0.15),
+                      AppColors.primary.withValues(alpha: 0.08),
                     ],
                   )
                 : null,
@@ -423,7 +423,7 @@ class _AddScheduleDialogState extends State<AddScheduleDialog> {
             boxShadow: isSelected
                 ? [
                     BoxShadow(
-                      color: AppColors.primary.withOpacity(0.2),
+                      color: AppColors.primary.withValues(alpha: 0.2),
                       blurRadius: 8,
                       offset: const Offset(0, 2),
                     ),
@@ -467,7 +467,7 @@ class _AddScheduleDialogState extends State<AddScheduleDialog> {
       hintText: hint,
       hintStyle: GoogleFonts.poppins(color: Colors.grey[400], fontSize: 13.sp),
       filled: true,
-      fillColor: AppColors.primary.withOpacity(0.05),
+      fillColor: AppColors.primary.withValues(alpha: 0.05),
       contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 18.h),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14.r),

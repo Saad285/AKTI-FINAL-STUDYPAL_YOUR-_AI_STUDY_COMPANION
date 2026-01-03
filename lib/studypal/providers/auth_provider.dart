@@ -150,19 +150,11 @@ class AuthProvider extends ChangeNotifier {
       // IF successful. If the user cancels, it often throws an exception.
 
       // 3. Strict Check
-      if (googleUser != null && !googleUser.email.endsWith('@gmail.com')) {
+      if (!googleUser.email.endsWith('@gmail.com')) {
         await GoogleSignIn.instance.signOut();
         _isLoading = false;
         notifyListeners();
         return 'Only real Gmail accounts (@gmail.com) are allowed.';
-      }
-
-      if (googleUser == null) {
-        // This block might not be reached in v7 if cancellation throws,
-        // but we keep it for safety.
-        _isLoading = false;
-        notifyListeners();
-        return null;
       }
 
       // 4. Get Auth Details (SYNCHRONOUS in v7)
